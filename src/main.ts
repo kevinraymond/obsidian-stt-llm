@@ -55,13 +55,11 @@ export default class SttLlmPlugin extends Plugin {
 		// Setup LLM-related UI (conditional on LLM being configured)
 		this.setupLlmUI();
 
-		console.log("STT & LLM plugin loaded");
 	}
 
 	onunload() {
 		this.recordingManager?.destroy();
 		this.app.workspace.detachLeavesOfType(LLM_VIEW_TYPE);
-		console.log("STT & LLM plugin unloaded");
 	}
 
 	async activateSidebarView(): Promise<void> {
@@ -262,7 +260,6 @@ export default class SttLlmPlugin extends Plugin {
 
 			new Notice("Summary inserted");
 		} catch (error) {
-			console.error("Summarization error:", error);
 			new Notice(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
 		}
 	}
@@ -291,7 +288,6 @@ export default class SttLlmPlugin extends Plugin {
 
 				new Notice("Response inserted");
 			} catch (error) {
-				console.error("Custom prompt error:", error);
 				new Notice(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
 			}
 		}).open();
@@ -393,7 +389,6 @@ export default class SttLlmPlugin extends Plugin {
 				new Notice("No new tags to add (all suggested tags already exist)");
 			}
 		} catch (error) {
-			console.error("Auto-tag error:", error);
 			new Notice(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
 		}
 	}

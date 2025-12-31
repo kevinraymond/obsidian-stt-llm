@@ -48,29 +48,15 @@ var init_customPromptModal = __esm({
           text: "Enter your prompt. The selected text will be appended.",
           cls: "setting-item-description"
         });
-        const textArea = contentEl.createEl("textarea", {
-          cls: "stt-prompt-textarea"
-        });
+        const textArea = contentEl.createEl("textarea");
         textArea.value = this.prompt;
         textArea.placeholder = "Enter your prompt here...";
         textArea.rows = 6;
-        textArea.style.width = "100%";
-        textArea.style.marginBottom = "15px";
-        textArea.style.fontFamily = "var(--font-text)";
-        textArea.style.padding = "10px";
-        textArea.style.borderRadius = "4px";
-        textArea.style.border = "1px solid var(--background-modifier-border)";
-        textArea.style.backgroundColor = "var(--background-primary)";
-        textArea.style.color = "var(--text-normal)";
-        textArea.style.resize = "vertical";
         textArea.addEventListener("input", (e) => {
           this.prompt = e.target.value;
         });
         setTimeout(() => textArea.focus(), 10);
         const buttonContainer = contentEl.createDiv({ cls: "modal-button-container" });
-        buttonContainer.style.display = "flex";
-        buttonContainer.style.justifyContent = "flex-end";
-        buttonContainer.style.gap = "10px";
         const cancelBtn = buttonContainer.createEl("button", { text: "Cancel" });
         cancelBtn.addEventListener("click", () => {
           this.onSubmit(null);
@@ -333,7 +319,7 @@ var SttLlmSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "Speech-to-Text" });
+    new import_obsidian.Setting(containerEl).setName("Speech-to-text").setHeading();
     new import_obsidian.Setting(containerEl).setName("STT Server URL").setDesc("WebSocket URL for the transcription server").addText(
       (text) => text.setPlaceholder("ws://localhost:8765").setValue(this.plugin.settings.stt.serverUrl).onChange(async (value) => {
         this.plugin.settings.stt.serverUrl = value;
@@ -383,7 +369,7 @@ var SttLlmSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
-    containerEl.createEl("h2", { text: "LLM (Optional)" });
+    new import_obsidian.Setting(containerEl).setName("LLM (optional)").setHeading();
     const llmConfigured = isLlmConfigured(this.plugin.settings);
     const llmStatusEl = containerEl.createEl("div", {
       cls: "stt-llm-status"
@@ -417,7 +403,7 @@ var SttLlmSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
-    containerEl.createEl("h3", { text: "Auto-Tagging" });
+    new import_obsidian.Setting(containerEl).setName("Auto-tagging").setHeading();
     new import_obsidian.Setting(containerEl).setName("Prefer existing tags").setDesc("Prioritize tags already used in your vault").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.tagging.preferExistingTags).onChange(async (value) => {
         this.plugin.settings.tagging.preferExistingTags = value;
@@ -430,7 +416,7 @@ var SttLlmSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
-    containerEl.createEl("h2", { text: "Voice Commands" });
+    new import_obsidian.Setting(containerEl).setName("Voice commands").setHeading();
     new import_obsidian.Setting(containerEl).setName("Enable voice commands").setDesc("Convert spoken commands to Markdown formatting (e.g., 'start bold' \u2192 **)").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.voiceCommands.enabled).onChange(async (value) => {
         this.plugin.settings.voiceCommands.enabled = value;
@@ -448,11 +434,11 @@ var SttLlmSettingTab = class extends import_obsidian.PluginSettingTab {
       const singleCommands = this.plugin.settings.voiceCommands.commands.filter(
         (c) => !c.isPaired
       );
-      commandsContainer.createEl("h4", { text: "Paired Commands (start/end)" });
+      new import_obsidian.Setting(commandsContainer).setName("Paired commands (start/end)").setHeading();
       for (const command of pairedCommands) {
         this.renderCommandSetting(commandsContainer, command);
       }
-      commandsContainer.createEl("h4", { text: "Single Commands" });
+      new import_obsidian.Setting(commandsContainer).setName("Single commands").setHeading();
       for (const command of singleCommands) {
         this.renderCommandSetting(commandsContainer, command);
       }
@@ -470,7 +456,7 @@ var SttLlmSettingTab = class extends import_obsidian.PluginSettingTab {
     const advancedDetails = containerEl.createEl("details", { cls: "stt-llm-advanced-settings" });
     advancedDetails.createEl("summary", { text: "Advanced Settings" });
     const advancedContainer = advancedDetails.createEl("div", { cls: "stt-llm-advanced-content" });
-    advancedContainer.createEl("h3", { text: "LLM Parameters" });
+    new import_obsidian.Setting(advancedContainer).setName("LLM parameters").setHeading();
     new import_obsidian.Setting(advancedContainer).setName("Temperature").setDesc("Controls randomness (0 = deterministic, 1 = creative)").addSlider(
       (slider) => slider.setLimits(0, 1, 0.1).setValue(this.plugin.settings.llm.temperature).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.llm.temperature = value;
@@ -486,14 +472,14 @@ var SttLlmSettingTab = class extends import_obsidian.PluginSettingTab {
         }
       })
     );
-    advancedContainer.createEl("h3", { text: "Voice Detection" });
+    new import_obsidian.Setting(advancedContainer).setName("Voice detection").setHeading();
     new import_obsidian.Setting(advancedContainer).setName("Silence threshold").setDesc("Audio level below this is considered silence (0-100)").addSlider(
       (slider) => slider.setLimits(5, 50, 5).setValue(this.plugin.settings.vad.silenceThreshold).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.vad.silenceThreshold = value;
         await this.plugin.saveSettings();
       })
     );
-    advancedContainer.createEl("h3", { text: "Prompt Templates" });
+    new import_obsidian.Setting(advancedContainer).setName("Prompt templates").setHeading();
     new import_obsidian.Setting(advancedContainer).setName("LLM correction").setDesc("Use LLM to fix transcription errors (shows both original and corrected)").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.correction.enabled).onChange(async (value) => {
         this.plugin.settings.correction.enabled = value;
@@ -802,7 +788,6 @@ var SttService = class {
           if (thisConnectionId !== this.connectionId) {
             return;
           }
-          console.error("STT WebSocket error:", error);
           if (!resolved) {
             resolved = true;
             this.setStatus("error", "Connection error");
@@ -890,10 +875,8 @@ var SttService = class {
           });
           break;
         default:
-          console.warn("Unknown STT message type:", message.type);
       }
     } catch (error) {
-      console.error("Error parsing STT message:", error);
     }
   }
 };
@@ -1075,12 +1058,10 @@ var RecordingModal = class extends import_obsidian4.Modal {
       cls: "stt-status",
       text: "Connecting..."
     });
-    this.indicatorEl = contentEl.createEl("div", { cls: "stt-indicator" });
+    this.indicatorEl = contentEl.createEl("div", { cls: "stt-indicator stt-hidden" });
     this.indicatorEl.createEl("span", { cls: "stt-pulse" });
-    this.indicatorEl.style.display = "none";
-    this.audioLevelEl = contentEl.createEl("div", { cls: "stt-audio-level" });
+    this.audioLevelEl = contentEl.createEl("div", { cls: "stt-audio-level stt-hidden" });
     this.audioLevelBar = this.audioLevelEl.createEl("div", { cls: "stt-audio-level-bar" });
-    this.audioLevelEl.style.display = "none";
     this.transcriptEl = contentEl.createEl("div", {
       cls: "stt-transcript",
       text: "Waiting for speech..."
@@ -1106,10 +1087,10 @@ var RecordingModal = class extends import_obsidian4.Modal {
     }
     const isRecording = status.toLowerCase().includes("recording");
     if (this.indicatorEl) {
-      this.indicatorEl.style.display = isRecording ? "flex" : "none";
+      this.indicatorEl.toggleClass("stt-hidden", !isRecording);
     }
     if (this.audioLevelEl) {
-      this.audioLevelEl.style.display = isRecording ? "block" : "none";
+      this.audioLevelEl.toggleClass("stt-hidden", !isRecording);
     }
   }
   /**
@@ -1156,7 +1137,7 @@ var RecordingModal = class extends import_obsidian4.Modal {
   showError(message) {
     this.updateStatus(`Error: ${message}`);
     if (this.indicatorEl) {
-      this.indicatorEl.style.display = "none";
+      this.indicatorEl.addClass("stt-hidden");
     }
     if (this.stopBtn) {
       this.stopBtn.setText("Close");
@@ -1168,7 +1149,7 @@ var RecordingModal = class extends import_obsidian4.Modal {
   showProcessing() {
     this.updateStatus("Processing final transcript...");
     if (this.indicatorEl) {
-      this.indicatorEl.style.display = "none";
+      this.indicatorEl.addClass("stt-hidden");
     }
     if (this.stopBtn) {
       this.stopBtn.disabled = true;
@@ -1227,7 +1208,6 @@ var RecordingManager = class {
           this.handleRecordingComplete();
         }
       } else if (status === "error") {
-        console.error("STT error:", error);
         (_c = this.modal) == null ? void 0 : _c.showError(error || "Unknown error");
         this.cleanup();
       }
@@ -1270,7 +1250,6 @@ var RecordingManager = class {
       this.sttService.startRecording(settings.stt.language);
       this.finalTranscript = "";
     } catch (error) {
-      console.error("Error starting recording:", error);
       const message = error instanceof Error ? error.message : "Unknown error";
       (_a = this.modal) == null ? void 0 : _a.showError(message);
       new import_obsidian5.Notice(`Failed to start recording: ${message}`);
@@ -1292,7 +1271,6 @@ var RecordingManager = class {
       await this.stopAudioCapture();
       this.sttService.stopRecording();
     } catch (error) {
-      console.error("Error stopping recording:", error);
       this.cleanup();
     }
   }
@@ -1337,7 +1315,6 @@ var RecordingManager = class {
         (_b = (_a = this.modal) == null ? void 0 : _a.updateAudioLevel) == null ? void 0 : _b.call(_a, level, countdown);
       }, 100);
     } catch (error) {
-      console.error("Error starting VAD:", error);
     }
   }
   stopVAD() {
@@ -1362,9 +1339,6 @@ var RecordingManager = class {
       return;
     }
     const { processedText, warnings } = this.voiceCommandProcessor.process(originalText);
-    if (warnings.length > 0) {
-      console.warn("Voice command warnings:", warnings);
-    }
     const settings = this.getSettings();
     if (settings.correction.enabled) {
       try {
@@ -1381,7 +1355,6 @@ var RecordingManager = class {
 > ${originalText.split("\n").join("\n> ")}`;
         this.insertAtCursor(combined);
       } catch (error) {
-        console.error("LLM correction failed:", error);
         this.insertAtCursor(processedText);
       }
     } else {
@@ -1427,7 +1400,6 @@ var RecordingManager = class {
       };
       this.mediaRecorder.start(100);
     } catch (error) {
-      console.error("Error starting audio capture:", error);
       throw new Error("Failed to access microphone. Please check permissions.");
     }
   }
@@ -1732,13 +1704,11 @@ var SttLlmPlugin = class extends import_obsidian9.Plugin {
     this.registerView(LLM_VIEW_TYPE, (leaf) => new LlmSidebarView(leaf, this));
     this.statusBarManager = new StatusBarManager(this);
     this.setupLlmUI();
-    console.log("STT & LLM plugin loaded");
   }
   onunload() {
     var _a;
     (_a = this.recordingManager) == null ? void 0 : _a.destroy();
     this.app.workspace.detachLeavesOfType(LLM_VIEW_TYPE);
-    console.log("STT & LLM plugin unloaded");
   }
   async activateSidebarView() {
     const { workspace } = this.app;
@@ -1895,7 +1865,6 @@ var SttLlmPlugin = class extends import_obsidian9.Plugin {
       editor.replaceRange("\n\n**Summary:**\n" + summary, cursor);
       new import_obsidian9.Notice("Summary inserted");
     } catch (error) {
-      console.error("Summarization error:", error);
       new import_obsidian9.Notice(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
@@ -1920,7 +1889,6 @@ ${selection}`;
         editor.replaceRange("\n\n" + result, cursor);
         new import_obsidian9.Notice("Response inserted");
       } catch (error) {
-        console.error("Custom prompt error:", error);
         new import_obsidian9.Notice(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
       }
     }).open();
@@ -1988,7 +1956,6 @@ This note already has these tags (do NOT suggest these): ${existingNoteTags.join
         new import_obsidian9.Notice("No new tags to add (all suggested tags already exist)");
       }
     } catch (error) {
-      console.error("Auto-tag error:", error);
       new import_obsidian9.Notice(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }

@@ -150,7 +150,6 @@ export class SttService {
 					if (thisConnectionId !== this.connectionId) {
 						return;
 					}
-					console.error("STT WebSocket error:", error);
 					if (!resolved) {
 						resolved = true;
 						this.setStatus("error", "Connection error");
@@ -251,10 +250,10 @@ export class SttService {
 					break;
 
 				default:
-					console.warn("Unknown STT message type:", message.type);
+					// Ignore unknown message types
 			}
 		} catch (error) {
-			console.error("Error parsing STT message:", error);
+			// Silently ignore parse errors
 		}
 	}
 }

@@ -20,7 +20,7 @@ export class SttLlmSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		// ===== SPEECH-TO-TEXT SECTION =====
-		containerEl.createEl("h2", { text: "Speech-to-Text" });
+		new Setting(containerEl).setName("Speech-to-text").setHeading();
 
 		new Setting(containerEl)
 			.setName("STT Server URL")
@@ -97,7 +97,7 @@ export class SttLlmSettingTab extends PluginSettingTab {
 			);
 
 		// ===== LLM SECTION =====
-		containerEl.createEl("h2", { text: "LLM (Optional)" });
+		new Setting(containerEl).setName("LLM (optional)").setHeading();
 
 		// Show LLM status
 		const llmConfigured = isLlmConfigured(this.plugin.settings);
@@ -156,7 +156,7 @@ export class SttLlmSettingTab extends PluginSettingTab {
 			);
 
 		// Auto-tagging basic settings
-		containerEl.createEl("h3", { text: "Auto-Tagging" });
+		new Setting(containerEl).setName("Auto-tagging").setHeading();
 
 		new Setting(containerEl)
 			.setName("Prefer existing tags")
@@ -185,7 +185,7 @@ export class SttLlmSettingTab extends PluginSettingTab {
 			);
 
 		// ===== VOICE COMMANDS SECTION =====
-		containerEl.createEl("h2", { text: "Voice Commands" });
+		new Setting(containerEl).setName("Voice commands").setHeading();
 
 		new Setting(containerEl)
 			.setName("Enable voice commands")
@@ -215,13 +215,13 @@ export class SttLlmSettingTab extends PluginSettingTab {
 			);
 
 			// Paired commands section
-			commandsContainer.createEl("h4", { text: "Paired Commands (start/end)" });
+			new Setting(commandsContainer).setName("Paired commands (start/end)").setHeading();
 			for (const command of pairedCommands) {
 				this.renderCommandSetting(commandsContainer, command);
 			}
 
 			// Single commands section
-			commandsContainer.createEl("h4", { text: "Single Commands" });
+			new Setting(commandsContainer).setName("Single commands").setHeading();
 			for (const command of singleCommands) {
 				this.renderCommandSetting(commandsContainer, command);
 			}
@@ -249,7 +249,7 @@ export class SttLlmSettingTab extends PluginSettingTab {
 		const advancedContainer = advancedDetails.createEl("div", { cls: "stt-llm-advanced-content" });
 
 		// LLM Advanced
-		advancedContainer.createEl("h3", { text: "LLM Parameters" });
+		new Setting(advancedContainer).setName("LLM parameters").setHeading();
 
 		new Setting(advancedContainer)
 			.setName("Temperature")
@@ -282,7 +282,7 @@ export class SttLlmSettingTab extends PluginSettingTab {
 			);
 
 		// VAD Advanced
-		advancedContainer.createEl("h3", { text: "Voice Detection" });
+		new Setting(advancedContainer).setName("Voice detection").setHeading();
 
 		new Setting(advancedContainer)
 			.setName("Silence threshold")
@@ -299,7 +299,7 @@ export class SttLlmSettingTab extends PluginSettingTab {
 			);
 
 		// Prompt Templates
-		advancedContainer.createEl("h3", { text: "Prompt Templates" });
+		new Setting(advancedContainer).setName("Prompt templates").setHeading();
 
 		new Setting(advancedContainer)
 			.setName("LLM correction")

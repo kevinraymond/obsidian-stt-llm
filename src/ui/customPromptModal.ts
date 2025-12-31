@@ -22,21 +22,10 @@ export class CustomPromptModal extends Modal {
 			cls: "setting-item-description",
 		});
 
-		const textArea = contentEl.createEl("textarea", {
-			cls: "stt-prompt-textarea",
-		});
+		const textArea = contentEl.createEl("textarea");
 		textArea.value = this.prompt;
 		textArea.placeholder = "Enter your prompt here...";
 		textArea.rows = 6;
-		textArea.style.width = "100%";
-		textArea.style.marginBottom = "15px";
-		textArea.style.fontFamily = "var(--font-text)";
-		textArea.style.padding = "10px";
-		textArea.style.borderRadius = "4px";
-		textArea.style.border = "1px solid var(--background-modifier-border)";
-		textArea.style.backgroundColor = "var(--background-primary)";
-		textArea.style.color = "var(--text-normal)";
-		textArea.style.resize = "vertical";
 
 		textArea.addEventListener("input", (e) => {
 			this.prompt = (e.target as HTMLTextAreaElement).value;
@@ -47,9 +36,6 @@ export class CustomPromptModal extends Modal {
 
 		// Button container
 		const buttonContainer = contentEl.createDiv({ cls: "modal-button-container" });
-		buttonContainer.style.display = "flex";
-		buttonContainer.style.justifyContent = "flex-end";
-		buttonContainer.style.gap = "10px";
 
 		// Cancel button
 		const cancelBtn = buttonContainer.createEl("button", { text: "Cancel" });

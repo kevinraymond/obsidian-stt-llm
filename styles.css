@@ -115,6 +115,23 @@
 	min-height: 100px;
 	margin-bottom: 15px;
 	font-family: var(--font-text);
+	padding: 10px;
+	border-radius: 4px;
+	border: 1px solid var(--background-modifier-border);
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	resize: vertical;
+}
+
+.stt-prompt-modal .modal-button-container {
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+}
+
+/* Hidden state for recording modal elements */
+.stt-hidden {
+	display: none !important;
 }
 
 /* Loading indicator */

@@ -27,14 +27,12 @@ export class RecordingModal extends Modal {
 		});
 
 		// Recording indicator
-		this.indicatorEl = contentEl.createEl("div", { cls: "stt-indicator" });
+		this.indicatorEl = contentEl.createEl("div", { cls: "stt-indicator stt-hidden" });
 		this.indicatorEl.createEl("span", { cls: "stt-pulse" });
-		this.indicatorEl.style.display = "none"; // Hidden until recording starts
 
 		// Audio level meter
-		this.audioLevelEl = contentEl.createEl("div", { cls: "stt-audio-level" });
+		this.audioLevelEl = contentEl.createEl("div", { cls: "stt-audio-level stt-hidden" });
 		this.audioLevelBar = this.audioLevelEl.createEl("div", { cls: "stt-audio-level-bar" });
-		this.audioLevelEl.style.display = "none";
 
 		// Transcript display
 		this.transcriptEl = contentEl.createEl("div", {
@@ -69,10 +67,10 @@ export class RecordingModal extends Modal {
 		// Show/hide recording indicator and audio level based on status
 		const isRecording = status.toLowerCase().includes("recording");
 		if (this.indicatorEl) {
-			this.indicatorEl.style.display = isRecording ? "flex" : "none";
+			this.indicatorEl.toggleClass("stt-hidden", !isRecording);
 		}
 		if (this.audioLevelEl) {
-			this.audioLevelEl.style.display = isRecording ? "block" : "none";
+			this.audioLevelEl.toggleClass("stt-hidden", !isRecording);
 		}
 	}
 
@@ -127,7 +125,7 @@ export class RecordingModal extends Modal {
 	showError(message: string): void {
 		this.updateStatus(`Error: ${message}`);
 		if (this.indicatorEl) {
-			this.indicatorEl.style.display = "none";
+			this.indicatorEl.addClass("stt-hidden");
 		}
 		if (this.stopBtn) {
 			this.stopBtn.setText("Close");
@@ -140,7 +138,7 @@ export class RecordingModal extends Modal {
 	showProcessing(): void {
 		this.updateStatus("Processing final transcript...");
 		if (this.indicatorEl) {
-			this.indicatorEl.style.display = "none";
+			this.indicatorEl.addClass("stt-hidden");
 		}
 		if (this.stopBtn) {
 			this.stopBtn.disabled = true;

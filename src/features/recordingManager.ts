@@ -67,7 +67,6 @@ export class RecordingManager {
 					this.handleRecordingComplete();
 				}
 			} else if (status === "error") {
-				console.error("STT error:", error);
 				this.modal?.showError(error || "Unknown error");
 				this.cleanup();
 			}
@@ -116,7 +115,6 @@ export class RecordingManager {
 			this.sttService.startRecording(settings.stt.language);
 			this.finalTranscript = "";
 		} catch (error) {
-			console.error("Error starting recording:", error);
 			const message = error instanceof Error ? error.message : "Unknown error";
 			this.modal?.showError(message);
 			new Notice(`Failed to start recording: ${message}`);
@@ -140,7 +138,6 @@ export class RecordingManager {
 			await this.stopAudioCapture();
 			this.sttService.stopRecording();
 		} catch (error) {
-			console.error("Error stopping recording:", error);
 			this.cleanup();
 		}
 	}
@@ -200,7 +197,7 @@ export class RecordingManager {
 				this.modal?.updateAudioLevel?.(level, countdown);
 			}, 100); // Check every 100ms
 		} catch (error) {
-			console.error("Error starting VAD:", error);
+			// VAD setup failed - continue without VAD
 		}
 	}
 
@@ -230,9 +227,6 @@ export class RecordingManager {
 		const { processedText, warnings } =
 			this.voiceCommandProcessor.process(originalText);
 
-		if (warnings.length > 0) {
-			console.warn("Voice command warnings:", warnings);
-		}
 
 		const settings = this.getSettings();
 		if (settings.correction.enabled) {
@@ -252,7 +246,6 @@ export class RecordingManager {
 
 				this.insertAtCursor(combined);
 			} catch (error) {
-				console.error("LLM correction failed:", error);
 				// Fall back to processed text on error (still has formatting)
 				this.insertAtCursor(processedText);
 			}
@@ -311,7 +304,6 @@ export class RecordingManager {
 
 			this.mediaRecorder.start(100);
 		} catch (error) {
-			console.error("Error starting audio capture:", error);
 			throw new Error("Failed to access microphone. Please check permissions.");
 		}
 	}
