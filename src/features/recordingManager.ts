@@ -1,6 +1,7 @@
 import { App, Notice, Editor, MarkdownView } from "obsidian";
 import { SttService } from "../services/sttService";
 import { LlmService } from "../services/llmService";
+import { VoiceCommandProcessor } from "../services/voiceCommandProcessor";
 import { RecordingModal } from "../ui/recordingModal";
 import type { SttLlmSettings } from "../settings";
 
@@ -10,6 +11,7 @@ export class RecordingManager {
 	private app: App;
 	private sttService: SttService;
 	private llmService: LlmService;
+	private voiceCommandProcessor: VoiceCommandProcessor;
 	private getSettings: () => SttLlmSettings;
 	private state: RecordingState = "idle";
 	private modal: RecordingModal | null = null;
@@ -35,6 +37,9 @@ export class RecordingManager {
 		this.sttService = sttService;
 		this.llmService = llmService;
 		this.getSettings = getSettings;
+		this.voiceCommandProcessor = new VoiceCommandProcessor(
+			() => getSettings().voiceCommands
+		);
 
 		this.setupSttCallbacks();
 	}
@@ -221,12 +226,20 @@ export class RecordingManager {
 			return;
 		}
 
+		// Process voice commands FIRST (before LLM correction)
+		const { processedText, warnings } =
+			this.voiceCommandProcessor.process(originalText);
+
+		if (warnings.length > 0) {
+			console.warn("Voice command warnings:", warnings);
+		}
+
 		const settings = this.getSettings();
 		if (settings.correction.enabled) {
 			try {
 				this.modal?.updateStatus("Applying LLM correction...");
 				const correctedText = await this.llmService.correctTranscription(
-					originalText,
+					processedText, // Use processed text (commands already converted)
 					settings.correction.prompt
 				);
 
@@ -235,16 +248,16 @@ export class RecordingManager {
 
 > [!info] LLM Correction Applied
 > **Original transcript:**
-> ${originalText.split("\n").join("\n> ")}`;
+> ${originalText.split("\n").join("\n> ")}`; // Show raw original for reference
 
 				this.insertAtCursor(combined);
 			} catch (error) {
 				console.error("LLM correction failed:", error);
-				// Fall back to original text on error
-				this.insertAtCursor(originalText);
+				// Fall back to processed text on error (still has formatting)
+				this.insertAtCursor(processedText);
 			}
 		} else {
-			this.insertAtCursor(originalText);
+			this.insertAtCursor(processedText); // Use processed text
 		}
 
 		this.cleanup();

@@ -137,6 +137,134 @@ var LANGUAGE_OPTIONS = [
   { code: "cs", name: "Czech" },
   { code: "auto", name: "Auto-detect" }
 ];
+var DEFAULT_VOICE_COMMANDS = [
+  // Paired formatting commands
+  {
+    type: "bold",
+    startTrigger: "start bold",
+    endTrigger: "end bold",
+    markdownStart: "**",
+    markdownEnd: "**",
+    isPaired: true
+  },
+  {
+    type: "italic",
+    startTrigger: "start italic",
+    endTrigger: "end italic",
+    markdownStart: "*",
+    markdownEnd: "*",
+    isPaired: true
+  },
+  {
+    type: "strikethrough",
+    startTrigger: "start strikethrough",
+    endTrigger: "end strikethrough",
+    markdownStart: "~~",
+    markdownEnd: "~~",
+    isPaired: true
+  },
+  {
+    type: "code_inline",
+    startTrigger: "start code",
+    endTrigger: "end code",
+    markdownStart: "`",
+    markdownEnd: "`",
+    isPaired: true
+  },
+  {
+    type: "code_block",
+    startTrigger: "start code block",
+    endTrigger: "end code block",
+    markdownStart: "\n```\n",
+    markdownEnd: "\n```\n",
+    isPaired: true
+  },
+  {
+    type: "blockquote",
+    startTrigger: "start quote",
+    endTrigger: "end quote",
+    markdownStart: "\n> ",
+    markdownEnd: "\n",
+    isPaired: true
+  },
+  {
+    type: "link",
+    startTrigger: "start link",
+    endTrigger: "end link",
+    markdownStart: "[",
+    markdownEnd: "](url)",
+    isPaired: true
+  },
+  // Single-action commands - headings
+  {
+    type: "heading_1",
+    startTrigger: "heading one",
+    markdownStart: "\n# ",
+    isPaired: false
+  },
+  {
+    type: "heading_2",
+    startTrigger: "heading two",
+    markdownStart: "\n## ",
+    isPaired: false
+  },
+  {
+    type: "heading_3",
+    startTrigger: "heading three",
+    markdownStart: "\n### ",
+    isPaired: false
+  },
+  {
+    type: "heading_4",
+    startTrigger: "heading four",
+    markdownStart: "\n#### ",
+    isPaired: false
+  },
+  {
+    type: "heading_5",
+    startTrigger: "heading five",
+    markdownStart: "\n##### ",
+    isPaired: false
+  },
+  {
+    type: "heading_6",
+    startTrigger: "heading six",
+    markdownStart: "\n###### ",
+    isPaired: false
+  },
+  // Single-action commands - lists
+  {
+    type: "bullet_list",
+    startTrigger: "bullet point",
+    markdownStart: "\n- ",
+    isPaired: false
+  },
+  {
+    type: "numbered_list",
+    startTrigger: "numbered item",
+    markdownStart: "\n1. ",
+    isPaired: false
+  },
+  {
+    type: "checkbox",
+    startTrigger: "checkbox",
+    markdownStart: "\n- [ ] ",
+    isPaired: false
+  },
+  // Single-action commands - whitespace
+  {
+    type: "new_line",
+    startTrigger: "new line",
+    markdownStart: "\n",
+    isPaired: false
+  },
+  {
+    type: "new_paragraph",
+    startTrigger: "new paragraph",
+    markdownStart: "\n\n",
+    isPaired: false
+  }
+];
 var DEFAULT_SETTINGS = {
   stt: {
     serverUrl: "ws://localhost:8765",
@@ -185,6 +313,10 @@ Return ONLY a JSON array of tag strings (without # prefix), e.g., ["tag1", "tag2
   },
   customPrompt: {
     defaultPrompt: ""
+  },
+  voiceCommands: {
+    enabled: true,
+    commands: DEFAULT_VOICE_COMMANDS
   }
 };
 function isLlmConfigured(settings) {
@@ -298,6 +430,43 @@ var SttLlmSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
+    containerEl.createEl("h2", { text: "Voice Commands" });
+    new import_obsidian.Setting(containerEl).setName("Enable voice commands").setDesc("Convert spoken commands to Markdown formatting (e.g., 'start bold' \u2192 **)").addToggle(
+      (toggle) => toggle.setValue(this.plugin.settings.voiceCommands.enabled).onChange(async (value) => {
+        this.plugin.settings.voiceCommands.enabled = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
+    if (this.plugin.settings.voiceCommands.enabled) {
+      const commandsContainer = containerEl.createEl("div", {
+        cls: "stt-voice-commands-container"
+      });
+      const pairedCommands = this.plugin.settings.voiceCommands.commands.filter(
+        (c) => c.isPaired
+      );
+      const singleCommands = this.plugin.settings.voiceCommands.commands.filter(
+        (c) => !c.isPaired
+      );
+      commandsContainer.createEl("h4", { text: "Paired Commands (start/end)" });
+      for (const command of pairedCommands) {
+        this.renderCommandSetting(commandsContainer, command);
+      }
+      commandsContainer.createEl("h4", { text: "Single Commands" });
+      for (const command of singleCommands) {
+        this.renderCommandSetting(commandsContainer, command);
+      }
+      new import_obsidian.Setting(containerEl).setName("Reset to defaults").setDesc("Restore all voice commands to their default trigger phrases").addButton(
+        (button) => button.setButtonText("Reset").onClick(async () => {
+          this.plugin.settings.voiceCommands.commands = JSON.parse(
+            JSON.stringify(DEFAULT_VOICE_COMMANDS)
+          );
+          await this.plugin.saveSettings();
+          this.display();
+          new import_obsidian.Notice("Voice commands reset to defaults");
+        })
+      );
+    }
     const advancedDetails = containerEl.createEl("details", { cls: "stt-llm-advanced-settings" });
     advancedDetails.createEl("summary", { text: "Advanced Settings" });
     const advancedContainer = advancedDetails.createEl("div", { cls: "stt-llm-advanced-content" });
@@ -355,6 +524,57 @@ var SttLlmSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
+  }
+  /**
+   * Render a single voice command setting
+   */
+  renderCommandSetting(container, command) {
+    const commandEl = container.createEl("div", { cls: "stt-voice-command-item" });
+    const typeLabel = this.formatCommandType(command.type);
+    const preview = command.isPaired ? `${command.markdownStart}text${command.markdownEnd}` : command.markdownStart.replace(/\n/g, "\u21B5");
+    const headerEl = commandEl.createEl("div", { cls: "stt-voice-command-header" });
+    headerEl.createEl("span", { text: typeLabel, cls: "stt-voice-command-type" });
+    headerEl.createEl("code", { text: preview, cls: "stt-voice-command-preview" });
+    new import_obsidian.Setting(commandEl).setName(command.isPaired ? "Start trigger" : "Trigger phrase").addText(
+      (text) => text.setValue(command.startTrigger).onChange(async (value) => {
+        command.startTrigger = value;
+        await this.plugin.saveSettings();
+      })
+    );
+    if (command.isPaired && command.endTrigger !== void 0) {
+      new import_obsidian.Setting(commandEl).setName("End trigger").addText(
+        (text) => text.setValue(command.endTrigger || "").onChange(async (value) => {
+          command.endTrigger = value;
+          await this.plugin.saveSettings();
+        })
+      );
+    }
+  }
+  /**
+   * Format a command type for display
+   */
+  formatCommandType(type) {
+    const typeLabels = {
+      bold: "Bold",
+      italic: "Italic",
+      strikethrough: "Strikethrough",
+      code_inline: "Inline Code",
+      code_block: "Code Block",
+      blockquote: "Blockquote",
+      heading_1: "Heading 1",
+      heading_2: "Heading 2",
+      heading_3: "Heading 3",
+      heading_4: "Heading 4",
+      heading_5: "Heading 5",
+      heading_6: "Heading 6",
+      bullet_list: "Bullet List",
+      numbered_list: "Numbered List",
+      checkbox: "Checkbox",
+      link: "Link",
+      new_line: "New Line",
+      new_paragraph: "New Paragraph"
+    };
+    return typeLabels[type] || type;
   }
 };
 
@@ -681,6 +901,162 @@ var SttService = class {
 // src/features/recordingManager.ts
 var import_obsidian5 = require("obsidian");
 
+// src/services/voiceCommandProcessor.ts
+var VoiceCommandProcessor = class {
+  constructor(getSettings) {
+    this.getSettings = getSettings;
+  }
+  /**
+   * Main entry point - process raw transcript and return formatted text
+   */
+  process(rawText) {
+    const settings = this.getSettings();
+    if (!settings.enabled) {
+      return { processedText: rawText, warnings: [] };
+    }
+    const warnings = [];
+    let text = rawText;
+    const triggerMap = this.buildTriggerMap(settings.commands);
+    const occurrences = this.findAllOccurrences(text, triggerMap);
+    if (occurrences.length === 0) {
+      return { processedText: text, warnings: [] };
+    }
+    const markers = occurrences.map((occ) => ({
+      index: occ.index,
+      length: occ.matchedText.length,
+      replacement: occ.isStartTrigger ? occ.command.markdownStart : occ.command.markdownEnd || "",
+      isStart: occ.isStartTrigger,
+      command: occ.command
+    }));
+    const validationWarnings = this.validatePairing(markers);
+    warnings.push(...validationWarnings);
+    markers.sort((a, b) => b.index - a.index);
+    for (const marker of markers) {
+      text = text.substring(0, marker.index) + marker.replacement + text.substring(marker.index + marker.length);
+    }
+    text = this.cleanupWhitespace(text);
+    return { processedText: text, warnings };
+  }
+  /**
+   * Build a map of normalized trigger phrases to commands
+   */
+  buildTriggerMap(commands) {
+    const map = /* @__PURE__ */ new Map();
+    for (const cmd of commands) {
+      const normalizedStart = this.normalizeTrigger(cmd.startTrigger);
+      map.set(normalizedStart, { command: cmd, isStart: true });
+      if (cmd.endTrigger) {
+        const normalizedEnd = this.normalizeTrigger(cmd.endTrigger);
+        map.set(normalizedEnd, { command: cmd, isStart: false });
+      }
+    }
+    return map;
+  }
+  /**
+   * Normalize a trigger phrase for matching:
+   * - Lowercase
+   * - Remove punctuation
+   * - Collapse whitespace
+   */
+  normalizeTrigger(trigger) {
+    return trigger.toLowerCase().replace(/[.,!?;:'"]/g, "").replace(/\s+/g, " ").trim();
+  }
+  /**
+   * Build a regex pattern that tolerates punctuation and whitespace variations
+   * @param trigger - The trigger phrase to match
+   * @param captureTrailingSpace - If true, capture trailing whitespace (for start triggers)
+   * @param captureLeadingSpace - If true, capture leading whitespace (for end triggers)
+   */
+  buildFlexiblePattern(trigger, captureTrailingSpace, captureLeadingSpace) {
+    const words = trigger.split(" ");
+    let pattern = words.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).map((word) => word + `[.,!?;:'"]*`).join("\\s+");
+    if (captureLeadingSpace) {
+      pattern = "\\s*" + pattern;
+    }
+    if (captureTrailingSpace) {
+      pattern = pattern + "\\s*";
+    }
+    return pattern;
+  }
+  /**
+   * Find all command occurrences in the text
+   */
+  findAllOccurrences(text, triggerMap) {
+    const results = [];
+    const triggers = Array.from(triggerMap.keys()).sort(
+      (a, b) => b.length - a.length
+    );
+    const claimedRanges = [];
+    for (const trigger of triggers) {
+      const { command, isStart } = triggerMap.get(trigger);
+      const isPaired = command.isPaired;
+      const captureTrailing = isPaired && isStart;
+      const captureLeading = isPaired && !isStart;
+      const regexPattern = this.buildFlexiblePattern(
+        trigger,
+        captureTrailing,
+        captureLeading
+      );
+      const regex = new RegExp(regexPattern, "gi");
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        const matchStart = match.index;
+        const matchEnd = match.index + match[0].length;
+        const overlaps = claimedRanges.some(
+          (range) => matchStart < range.end && matchEnd > range.start
+        );
+        if (!overlaps) {
+          results.push({
+            command,
+            isStartTrigger: isStart,
+            index: match.index,
+            matchedText: match[0]
+          });
+          claimedRanges.push({ start: matchStart, end: matchEnd });
+        }
+      }
+    }
+    return results;
+  }
+  /**
+   * Validate that paired commands are properly nested
+   */
+  validatePairing(markers) {
+    const warnings = [];
+    const stack = [];
+    const sorted = [...markers].sort((a, b) => a.index - b.index);
+    for (const marker of sorted) {
+      if (!marker.command.isPaired)
+        continue;
+      if (marker.isStart) {
+        stack.push({ command: marker.command, index: marker.index });
+      } else {
+        const lastOpen = stack.pop();
+        if (!lastOpen) {
+          warnings.push(
+            `Unmatched "${marker.command.endTrigger}" found`
+          );
+        } else if (lastOpen.command.type !== marker.command.type) {
+          warnings.push(
+            `Mismatched nesting: "${lastOpen.command.startTrigger}" closed by "${marker.command.endTrigger}"`
+          );
+          stack.push(lastOpen);
+        }
+      }
+    }
+    for (const open of stack) {
+      warnings.push(`Unclosed "${open.command.startTrigger}"`);
+    }
+    return warnings;
+  }
+  /**
+   * Clean up whitespace artifacts from command replacement
+   */
+  cleanupWhitespace(text) {
+    return text.replace(/\n{3,}/g, "\n\n").replace(/  +/g, " ").trim();
+  }
+};
+
 // src/ui/recordingModal.ts
 var import_obsidian4 = require("obsidian");
 var RecordingModal = class extends import_obsidian4.Modal {
@@ -824,6 +1200,9 @@ var RecordingManager = class {
     this.sttService = sttService;
     this.llmService = llmService;
     this.getSettings = getSettings;
+    this.voiceCommandProcessor = new VoiceCommandProcessor(
+      () => getSettings().voiceCommands
+    );
     this.setupSttCallbacks();
   }
   setRibbonIcon(icon) {
@@ -982,12 +1361,17 @@ var RecordingManager = class {
       this.cleanup();
       return;
     }
+    const { processedText, warnings } = this.voiceCommandProcessor.process(originalText);
+    if (warnings.length > 0) {
+      console.warn("Voice command warnings:", warnings);
+    }
     const settings = this.getSettings();
     if (settings.correction.enabled) {
       try {
         (_b = this.modal) == null ? void 0 : _b.updateStatus("Applying LLM correction...");
         const correctedText = await this.llmService.correctTranscription(
-          originalText,
+          processedText,
+          // Use processed text (commands already converted)
           settings.correction.prompt
         );
         const combined = `${correctedText}
@@ -998,10 +1382,10 @@ var RecordingManager = class {
         this.insertAtCursor(combined);
       } catch (error) {
         console.error("LLM correction failed:", error);
-        this.insertAtCursor(originalText);
+        this.insertAtCursor(processedText);
       }
     } else {
-      this.insertAtCursor(originalText);
+      this.insertAtCursor(processedText);
     }
     this.cleanup();
   }

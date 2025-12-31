@@ -23,6 +23,174 @@ export const LANGUAGE_OPTIONS: { code: string; name: string }[] = [
 	{ code: "auto", name: "Auto-detect" },
 ];
 
+// Voice Command Types
+export type VoiceCommandType =
+	| "bold"
+	| "italic"
+	| "strikethrough"
+	| "code_inline"
+	| "code_block"
+	| "blockquote"
+	| "heading_1"
+	| "heading_2"
+	| "heading_3"
+	| "heading_4"
+	| "heading_5"
+	| "heading_6"
+	| "bullet_list"
+	| "numbered_list"
+	| "checkbox"
+	| "link"
+	| "new_line"
+	| "new_paragraph";
+
+export interface VoiceCommand {
+	type: VoiceCommandType;
+	startTrigger: string; // Phrase to start/open (e.g., "start bold")
+	endTrigger?: string; // Phrase to end/close - undefined for single commands
+	markdownStart: string; // Markdown to insert at start (e.g., "**")
+	markdownEnd?: string; // Markdown to insert at end - undefined for single commands
+	isPaired: boolean; // true = requires open/close, false = single action
+}
+
+export interface VoiceCommandsSettings {
+	enabled: boolean;
+	commands: VoiceCommand[];
+}
+
+// Default voice command mappings
+export const DEFAULT_VOICE_COMMANDS: VoiceCommand[] = [
+	// Paired formatting commands
+	{
+		type: "bold",
+		startTrigger: "start bold",
+		endTrigger: "end bold",
+		markdownStart: "**",
+		markdownEnd: "**",
+		isPaired: true,
+	},
+	{
+		type: "italic",
+		startTrigger: "start italic",
+		endTrigger: "end italic",
+		markdownStart: "*",
+		markdownEnd: "*",
+		isPaired: true,
+	},
+	{
+		type: "strikethrough",
+		startTrigger: "start strikethrough",
+		endTrigger: "end strikethrough",
+		markdownStart: "~~",
+		markdownEnd: "~~",
+		isPaired: true,
+	},
+	{
+		type: "code_inline",
+		startTrigger: "start code",
+		endTrigger: "end code",
+		markdownStart: "`",
+		markdownEnd: "`",
+		isPaired: true,
+	},
+	{
+		type: "code_block",
+		startTrigger: "start code block",
+		endTrigger: "end code block",
+		markdownStart: "\n```\n",
+		markdownEnd: "\n```\n",
+		isPaired: true,
+	},
+	{
+		type: "blockquote",
+		startTrigger: "start quote",
+		endTrigger: "end quote",
+		markdownStart: "\n> ",
+		markdownEnd: "\n",
+		isPaired: true,
+	},
+	{
+		type: "link",
+		startTrigger: "start link",
+		endTrigger: "end link",
+		markdownStart: "[",
+		markdownEnd: "](url)",
+		isPaired: true,
+	},
+
+	// Single-action commands - headings
+	{
+		type: "heading_1",
+		startTrigger: "heading one",
+		markdownStart: "\n# ",
+		isPaired: false,
+	},
+	{
+		type: "heading_2",
+		startTrigger: "heading two",
+		markdownStart: "\n## ",
+		isPaired: false,
+	},
+	{
+		type: "heading_3",
+		startTrigger: "heading three",
+		markdownStart: "\n### ",
+		isPaired: false,
+	},
+	{
+		type: "heading_4",
+		startTrigger: "heading four",
+		markdownStart: "\n#### ",
+		isPaired: false,
+	},
+	{
+		type: "heading_5",
+		startTrigger: "heading five",
+		markdownStart: "\n##### ",
+		isPaired: false,
+	},
+	{
+		type: "heading_6",
+		startTrigger: "heading six",
+		markdownStart: "\n###### ",
+		isPaired: false,
+	},
+
+	// Single-action commands - lists
+	{
+		type: "bullet_list",
+		startTrigger: "bullet point",
+		markdownStart: "\n- ",
+		isPaired: false,
+	},
+	{
+		type: "numbered_list",
+		startTrigger: "numbered item",
+		markdownStart: "\n1. ",
+		isPaired: false,
+	},
+	{
+		type: "checkbox",
+		startTrigger: "checkbox",
+		markdownStart: "\n- [ ] ",
+		isPaired: false,
+	},
+
+	// Single-action commands - whitespace
+	{
+		type: "new_line",
+		startTrigger: "new line",
+		markdownStart: "\n",
+		isPaired: false,
+	},
+	{
+		type: "new_paragraph",
+		startTrigger: "new paragraph",
+		markdownStart: "\n\n",
+		isPaired: false,
+	},
+];
+
 export interface SttLlmSettings {
 	// STT Server Settings
 	stt: {
@@ -68,6 +236,9 @@ export interface SttLlmSettings {
 	customPrompt: {
 		defaultPrompt: string;
 	};
+
+	// Voice Commands Settings
+	voiceCommands: VoiceCommandsSettings;
 }
 
 export const DEFAULT_SETTINGS: SttLlmSettings = {
@@ -116,6 +287,10 @@ Return ONLY a JSON array of tag strings (without # prefix), e.g., ["tag1", "tag2
 	},
 	customPrompt: {
 		defaultPrompt: "",
+	},
+	voiceCommands: {
+		enabled: true,
+		commands: DEFAULT_VOICE_COMMANDS,
 	},
 };
 

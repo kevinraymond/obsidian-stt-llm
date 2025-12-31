@@ -1,6 +1,11 @@
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type SttLlmPlugin from "./main";
-import { LANGUAGE_OPTIONS, isLlmConfigured } from "./settings";
+import {
+	LANGUAGE_OPTIONS,
+	isLlmConfigured,
+	DEFAULT_VOICE_COMMANDS,
+	type VoiceCommandType,
+} from "./settings";
 
 export class SttLlmSettingTab extends PluginSettingTab {
 	plugin: SttLlmPlugin;
@@ -179,6 +184,64 @@ export class SttLlmSettingTab extends PluginSettingTab {
 					})
 			);
 
+		// ===== VOICE COMMANDS SECTION =====
+		containerEl.createEl("h2", { text: "Voice Commands" });
+
+		new Setting(containerEl)
+			.setName("Enable voice commands")
+			.setDesc("Convert spoken commands to Markdown formatting (e.g., 'start bold' → **)")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.voiceCommands.enabled)
+					.onChange(async (value) => {
+						this.plugin.settings.voiceCommands.enabled = value;
+						await this.plugin.saveSettings();
+						this.display(); // Refresh to show/hide command list
+					})
+			);
+
+		// Only show command configuration if enabled
+		if (this.plugin.settings.voiceCommands.enabled) {
+			const commandsContainer = containerEl.createEl("div", {
+				cls: "stt-voice-commands-container",
+			});
+
+			// Group commands by category
+			const pairedCommands = this.plugin.settings.voiceCommands.commands.filter(
+				(c) => c.isPaired
+			);
+			const singleCommands = this.plugin.settings.voiceCommands.commands.filter(
+				(c) => !c.isPaired
+			);
+
+			// Paired commands section
+			commandsContainer.createEl("h4", { text: "Paired Commands (start/end)" });
+			for (const command of pairedCommands) {
+				this.renderCommandSetting(commandsContainer, command);
+			}
+
+			// Single commands section
+			commandsContainer.createEl("h4", { text: "Single Commands" });
+			for (const command of singleCommands) {
+				this.renderCommandSetting(commandsContainer, command);
+			}
+
+			// Reset to defaults button
+			new Setting(containerEl)
+				.setName("Reset to defaults")
+				.setDesc("Restore all voice commands to their default trigger phrases")
+				.addButton((button) =>
+					button.setButtonText("Reset").onClick(async () => {
+						this.plugin.settings.voiceCommands.commands = JSON.parse(
+							JSON.stringify(DEFAULT_VOICE_COMMANDS)
+						);
+						await this.plugin.saveSettings();
+						this.display();
+						new Notice("Voice commands reset to defaults");
+					})
+				);
+		}
+
 		// ===== ADVANCED SECTION =====
 		const advancedDetails = containerEl.createEl("details", { cls: "stt-llm-advanced-settings" });
 		advancedDetails.createEl("summary", { text: "Advanced Settings" });
@@ -299,5 +362,74 @@ export class SttLlmSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+	}
+
+	/**
+	 * Render a single voice command setting
+	 */
+	private renderCommandSetting(container: HTMLElement, command: typeof this.plugin.settings.voiceCommands.commands[0]): void {
+		const commandEl = container.createEl("div", { cls: "stt-voice-command-item" });
+
+		// Format the command type for display
+		const typeLabel = this.formatCommandType(command.type);
+
+		// Preview of markdown output
+		const preview = command.isPaired
+			? `${command.markdownStart}text${command.markdownEnd}`
+			: command.markdownStart.replace(/\n/g, "↵");
+
+		// Command header with type and preview
+		const headerEl = commandEl.createEl("div", { cls: "stt-voice-command-header" });
+		headerEl.createEl("span", { text: typeLabel, cls: "stt-voice-command-type" });
+		headerEl.createEl("code", { text: preview, cls: "stt-voice-command-preview" });
+
+		// Start trigger input
+		new Setting(commandEl)
+			.setName(command.isPaired ? "Start trigger" : "Trigger phrase")
+			.addText((text) =>
+				text.setValue(command.startTrigger).onChange(async (value) => {
+					command.startTrigger = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		// End trigger input (only for paired commands)
+		if (command.isPaired && command.endTrigger !== undefined) {
+			new Setting(commandEl)
+				.setName("End trigger")
+				.addText((text) =>
+					text.setValue(command.endTrigger || "").onChange(async (value) => {
+						command.endTrigger = value;
+						await this.plugin.saveSettings();
+					})
+				);
+		}
+	}
+
+	/**
+	 * Format a command type for display
+	 */
+	private formatCommandType(type: VoiceCommandType): string {
+		const typeLabels: Record<VoiceCommandType, string> = {
+			bold: "Bold",
+			italic: "Italic",
+			strikethrough: "Strikethrough",
+			code_inline: "Inline Code",
+			code_block: "Code Block",
+			blockquote: "Blockquote",
+			heading_1: "Heading 1",
+			heading_2: "Heading 2",
+			heading_3: "Heading 3",
+			heading_4: "Heading 4",
+			heading_5: "Heading 5",
+			heading_6: "Heading 6",
+			bullet_list: "Bullet List",
+			numbered_list: "Numbered List",
+			checkbox: "Checkbox",
+			link: "Link",
+			new_line: "New Line",
+			new_paragraph: "New Paragraph",
+		};
+		return typeLabels[type] || type;
 	}
 }
