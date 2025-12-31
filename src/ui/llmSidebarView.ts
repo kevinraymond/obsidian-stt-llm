@@ -1,18 +1,10 @@
-import { ItemView, WorkspaceLeaf, setIcon } from "obsidian";
+import { ItemView, MarkdownView, Notice, WorkspaceLeaf, setIcon } from "obsidian";
 import type SttLlmPlugin from "../main";
 
 export const LLM_VIEW_TYPE = "stt-llm-sidebar";
 
-interface OperationHistoryItem {
-	type: "summarize" | "custom-prompt" | "auto-tag" | "stt";
-	timestamp: Date;
-	success: boolean;
-}
-
 export class LlmSidebarView extends ItemView {
 	private plugin: SttLlmPlugin;
-	private historyContainerEl: HTMLElement;
-	private operationHistory: OperationHistoryItem[] = [];
 
 	constructor(leaf: WorkspaceLeaf, plugin: SttLlmPlugin) {
 		super(leaf);
@@ -45,15 +37,6 @@ export class LlmSidebarView extends ItemView {
 		actionsSection.createEl("h4", { text: "Quick Actions" });
 		const actionsContainer = actionsSection.createEl("div", { cls: "stt-llm-actions" });
 		this.renderActionButtons(actionsContainer);
-
-		// Divider
-		container.createEl("hr", { cls: "stt-llm-divider" });
-
-		// Recent Operations Section
-		const historySection = container.createEl("div", { cls: "stt-llm-sidebar-section" });
-		historySection.createEl("h4", { text: "Recent Operations" });
-		this.historyContainerEl = historySection.createEl("div", { cls: "stt-llm-history" });
-		this.renderHistory();
 
 		// Divider
 		container.createEl("hr", { cls: "stt-llm-divider" });
@@ -130,93 +113,17 @@ export class LlmSidebarView extends ItemView {
 	}
 
 	private async executeAction(actionId: string): Promise<void> {
+		// Editor-dependent actions need special handling
+		if (actionId === "summarize" || actionId === "custom-prompt") {
+			const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+			if (!view?.editor) {
+				new Notice("No active editor");
+				return;
+			}
+		}
+
 		const commandId = `stt-llm:${actionId}`;
-		let success = false;
-
-		try {
-			(this.app as any).commands.executeCommandById(commandId);
-			success = true;
-		} catch (error) {
-			success = false;
-		}
-
-		// Add to history (except STT which has its own UI)
-		if (actionId !== "toggle-recording") {
-			this.addToHistory({
-				type: actionId as OperationHistoryItem["type"],
-				timestamp: new Date(),
-				success,
-			});
-		}
-	}
-
-	addToHistory(item: OperationHistoryItem): void {
-		this.operationHistory.unshift(item);
-		if (this.operationHistory.length > 10) {
-			this.operationHistory.pop();
-		}
-		this.renderHistory();
-	}
-
-	private renderHistory(): void {
-		if (!this.historyContainerEl) return;
-		this.historyContainerEl.empty();
-
-		if (this.operationHistory.length === 0) {
-			this.historyContainerEl.createEl("div", {
-				text: "No recent operations",
-				cls: "stt-llm-history-empty",
-			});
-			return;
-		}
-
-		for (const item of this.operationHistory) {
-			const historyItem = this.historyContainerEl.createEl("div", {
-				cls: `stt-llm-history-item ${item.success ? "success" : "error"}`,
-			});
-
-			const iconSpan = historyItem.createSpan({ cls: "stt-llm-history-icon" });
-			const iconName =
-				item.type === "summarize"
-					? "file-text"
-					: item.type === "custom-prompt"
-						? "message-square"
-						: "tags";
-			setIcon(iconSpan, iconName);
-
-			const content = historyItem.createEl("div", { cls: "stt-llm-history-content" });
-			content.createEl("span", {
-				text: this.getActionLabel(item.type),
-				cls: "stt-llm-history-label",
-			});
-			content.createEl("span", {
-				text: this.formatTime(item.timestamp),
-				cls: "stt-llm-history-time",
-			});
-		}
-	}
-
-	private getActionLabel(type: string): string {
-		switch (type) {
-			case "summarize":
-				return "Summarize";
-			case "custom-prompt":
-				return "Custom Prompt";
-			case "auto-tag":
-				return "Generate Tags";
-			default:
-				return type;
-		}
-	}
-
-	private formatTime(date: Date): string {
-		const now = new Date();
-		const diff = now.getTime() - date.getTime();
-
-		if (diff < 60000) return "Just now";
-		if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-		if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-		return date.toLocaleDateString();
+		(this.app as any).commands.executeCommandById(commandId);
 	}
 
 	async onClose(): Promise<void> {

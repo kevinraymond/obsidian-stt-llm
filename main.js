@@ -1509,7 +1509,6 @@ var LLM_VIEW_TYPE = "stt-llm-sidebar";
 var LlmSidebarView = class extends import_obsidian7.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
-    this.operationHistory = [];
     this.plugin = plugin;
   }
   getViewType() {
@@ -1531,11 +1530,6 @@ var LlmSidebarView = class extends import_obsidian7.ItemView {
     actionsSection.createEl("h4", { text: "Quick Actions" });
     const actionsContainer = actionsSection.createEl("div", { cls: "stt-llm-actions" });
     this.renderActionButtons(actionsContainer);
-    container.createEl("hr", { cls: "stt-llm-divider" });
-    const historySection = container.createEl("div", { cls: "stt-llm-sidebar-section" });
-    historySection.createEl("h4", { text: "Recent Operations" });
-    this.historyContainerEl = historySection.createEl("div", { cls: "stt-llm-history" });
-    this.renderHistory();
     container.createEl("hr", { cls: "stt-llm-divider" });
     const settingsSection = container.createEl("div", { cls: "stt-llm-sidebar-section" });
     settingsSection.createEl("h4", { text: "Settings" });
@@ -1598,80 +1592,15 @@ var LlmSidebarView = class extends import_obsidian7.ItemView {
     }
   }
   async executeAction(actionId) {
+    if (actionId === "summarize" || actionId === "custom-prompt") {
+      const view = this.app.workspace.getActiveViewOfType(import_obsidian7.MarkdownView);
+      if (!(view == null ? void 0 : view.editor)) {
+        new import_obsidian7.Notice("No active editor");
+        return;
+      }
+    }
     const commandId = `stt-llm:${actionId}`;
-    let success = false;
-    try {
-      this.app.commands.executeCommandById(commandId);
-      success = true;
-    } catch (error) {
-      success = false;
-    }
-    if (actionId !== "toggle-recording") {
-      this.addToHistory({
-        type: actionId,
-        timestamp: /* @__PURE__ */ new Date(),
-        success
-      });
-    }
-  }
-  addToHistory(item) {
-    this.operationHistory.unshift(item);
-    if (this.operationHistory.length > 10) {
-      this.operationHistory.pop();
-    }
-    this.renderHistory();
-  }
-  renderHistory() {
-    if (!this.historyContainerEl)
-      return;
-    this.historyContainerEl.empty();
-    if (this.operationHistory.length === 0) {
-      this.historyContainerEl.createEl("div", {
-        text: "No recent operations",
-        cls: "stt-llm-history-empty"
-      });
-      return;
-    }
-    for (const item of this.operationHistory) {
-      const historyItem = this.historyContainerEl.createEl("div", {
-        cls: `stt-llm-history-item ${item.success ? "success" : "error"}`
-      });
-      const iconSpan = historyItem.createSpan({ cls: "stt-llm-history-icon" });
-      const iconName = item.type === "summarize" ? "file-text" : item.type === "custom-prompt" ? "message-square" : "tags";
-      (0, import_obsidian7.setIcon)(iconSpan, iconName);
-      const content = historyItem.createEl("div", { cls: "stt-llm-history-content" });
-      content.createEl("span", {
-        text: this.getActionLabel(item.type),
-        cls: "stt-llm-history-label"
-      });
-      content.createEl("span", {
-        text: this.formatTime(item.timestamp),
-        cls: "stt-llm-history-time"
-      });
-    }
-  }
-  getActionLabel(type) {
-    switch (type) {
-      case "summarize":
-        return "Summarize";
-      case "custom-prompt":
-        return "Custom Prompt";
-      case "auto-tag":
-        return "Generate Tags";
-      default:
-        return type;
-    }
-  }
-  formatTime(date) {
-    const now = /* @__PURE__ */ new Date();
-    const diff = now.getTime() - date.getTime();
-    if (diff < 6e4)
-      return "Just now";
-    if (diff < 36e5)
-      return `${Math.floor(diff / 6e4)}m ago`;
-    if (diff < 864e5)
-      return `${Math.floor(diff / 36e5)}h ago`;
-    return date.toLocaleDateString();
+    this.app.commands.executeCommandById(commandId);
   }
   async onClose() {
   }
