@@ -13,18 +13,84 @@ export class SttLlmSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		// LLM Settings
-		containerEl.createEl("h2", { text: "LLM Settings" });
+		// ===== SPEECH-TO-TEXT SECTION =====
+		containerEl.createEl("h2", { text: "Speech-to-Text" });
+
+		new Setting(containerEl)
+			.setName("STT Server URL")
+			.setDesc("WebSocket URL for the transcription server")
+			.addText((text) =>
+				text
+					.setPlaceholder("ws://localhost:8765")
+					.setValue(this.plugin.settings.stt.serverUrl)
+					.onChange(async (value) => {
+						this.plugin.settings.stt.serverUrl = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Language")
+			.setDesc("Language code for transcription (e.g., en, es, fr)")
+			.addText((text) =>
+				text
+					.setPlaceholder("en")
+					.setValue(this.plugin.settings.stt.language)
+					.onChange(async (value) => {
+						this.plugin.settings.stt.language = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Auto-stop on silence")
+			.setDesc("Stop recording automatically when you stop speaking")
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.vad.enabled).onChange(async (value) => {
+					this.plugin.settings.vad.enabled = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName("Silence duration")
+			.setDesc("Seconds of silence before auto-stop")
+			.addSlider((slider) =>
+				slider
+					.setLimits(0.5, 5, 0.5)
+					.setValue(this.plugin.settings.vad.silenceDuration)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						this.plugin.settings.vad.silenceDuration = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		// ===== LLM SECTION =====
+		containerEl.createEl("h2", { text: "LLM" });
 
 		new Setting(containerEl)
 			.setName("API Base URL")
-			.setDesc("Base URL for OpenAI-compatible API (e.g., Ollama, LM Studio)")
+			.setDesc("OpenAI-compatible API endpoint (Ollama, LM Studio, etc.)")
 			.addText((text) =>
 				text
 					.setPlaceholder("http://localhost:11434")
 					.setValue(this.plugin.settings.llm.baseUrl)
 					.onChange(async (value) => {
 						this.plugin.settings.llm.baseUrl = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Model")
+			.setDesc("Model name for completions")
+			.addText((text) =>
+				text
+					.setPlaceholder("llama3.2")
+					.setValue(this.plugin.settings.llm.model)
+					.onChange(async (value) => {
+						this.plugin.settings.llm.model = value;
 						await this.plugin.saveSettings();
 					})
 			);
@@ -42,22 +108,47 @@ export class SttLlmSettingTab extends PluginSettingTab {
 					})
 			);
 
+		// Auto-tagging basic settings
+		containerEl.createEl("h3", { text: "Auto-Tagging" });
+
 		new Setting(containerEl)
-			.setName("Model")
-			.setDesc("Model name to use for completions")
-			.addText((text) =>
-				text
-					.setPlaceholder("llama3.2")
-					.setValue(this.plugin.settings.llm.model)
+			.setName("Prefer existing tags")
+			.setDesc("Prioritize tags already used in your vault")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.tagging.preferExistingTags)
 					.onChange(async (value) => {
-						this.plugin.settings.llm.model = value;
+						this.plugin.settings.tagging.preferExistingTags = value;
 						await this.plugin.saveSettings();
 					})
 			);
 
 		new Setting(containerEl)
+			.setName("Max new tags")
+			.setDesc("Maximum tags to generate per note")
+			.addSlider((slider) =>
+				slider
+					.setLimits(1, 10, 1)
+					.setValue(this.plugin.settings.tagging.maxNewTags)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						this.plugin.settings.tagging.maxNewTags = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		// ===== ADVANCED SECTION =====
+		const advancedDetails = containerEl.createEl("details", { cls: "stt-llm-advanced-settings" });
+		advancedDetails.createEl("summary", { text: "Advanced Settings" });
+
+		const advancedContainer = advancedDetails.createEl("div", { cls: "stt-llm-advanced-content" });
+
+		// LLM Advanced
+		advancedContainer.createEl("h3", { text: "LLM Parameters" });
+
+		new Setting(advancedContainer)
 			.setName("Temperature")
-			.setDesc("Controls randomness (0.0 = deterministic, 1.0 = creative)")
+			.setDesc("Controls randomness (0 = deterministic, 1 = creative)")
 			.addSlider((slider) =>
 				slider
 					.setLimits(0, 1, 0.1)
@@ -69,8 +160,8 @@ export class SttLlmSettingTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl)
-			.setName("Max Tokens")
+		new Setting(advancedContainer)
+			.setName("Max tokens")
 			.setDesc("Maximum tokens in response")
 			.addText((text) =>
 				text
@@ -85,52 +176,11 @@ export class SttLlmSettingTab extends PluginSettingTab {
 					})
 			);
 
-		// STT Settings
-		containerEl.createEl("h2", { text: "Speech-to-Text Settings" });
+		// VAD Advanced
+		advancedContainer.createEl("h3", { text: "Voice Detection" });
 
-		new Setting(containerEl)
-			.setName("STT Server URL")
-			.setDesc("WebSocket URL for the STT server")
-			.addText((text) =>
-				text
-					.setPlaceholder("ws://localhost:8765")
-					.setValue(this.plugin.settings.stt.serverUrl)
-					.onChange(async (value) => {
-						this.plugin.settings.stt.serverUrl = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Language")
-			.setDesc("Language code for transcription")
-			.addText((text) =>
-				text
-					.setPlaceholder("en")
-					.setValue(this.plugin.settings.stt.language)
-					.onChange(async (value) => {
-						this.plugin.settings.stt.language = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		// Voice Activity Detection Settings
-		containerEl.createEl("h2", { text: "Voice Activity Detection" });
-
-		new Setting(containerEl)
-			.setName("Enable Auto-Stop")
-			.setDesc("Automatically stop recording after silence is detected")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.vad.enabled)
-					.onChange(async (value) => {
-						this.plugin.settings.vad.enabled = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Silence Threshold")
+		new Setting(advancedContainer)
+			.setName("Silence threshold")
 			.setDesc("Audio level below this is considered silence (0-100)")
 			.addSlider((slider) =>
 				slider
@@ -143,38 +193,22 @@ export class SttLlmSettingTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl)
-			.setName("Silence Duration")
-			.setDesc("Seconds of silence before auto-stop")
-			.addSlider((slider) =>
-				slider
-					.setLimits(0.5, 5, 0.5)
-					.setValue(this.plugin.settings.vad.silenceDuration)
-					.setDynamicTooltip()
-					.onChange(async (value) => {
-						this.plugin.settings.vad.silenceDuration = value;
-						await this.plugin.saveSettings();
-					})
-			);
+		// Prompt Templates
+		advancedContainer.createEl("h3", { text: "Prompt Templates" });
 
-		// STT Correction Settings
-		containerEl.createEl("h2", { text: "Transcription Correction" });
-
-		new Setting(containerEl)
-			.setName("Enable LLM Correction")
-			.setDesc("Post-process transcriptions with LLM to fix errors")
+		new Setting(advancedContainer)
+			.setName("LLM correction")
+			.setDesc("Use LLM to fix transcription errors (shows both original and corrected)")
 			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.correction.enabled)
-					.onChange(async (value) => {
-						this.plugin.settings.correction.enabled = value;
-						await this.plugin.saveSettings();
-					})
+				toggle.setValue(this.plugin.settings.correction.enabled).onChange(async (value) => {
+					this.plugin.settings.correction.enabled = value;
+					await this.plugin.saveSettings();
+				})
 			);
 
-		new Setting(containerEl)
-			.setName("Correction Prompt")
-			.setDesc("Prompt template for correction. Use {{text}} for the transcription.")
+		new Setting(advancedContainer)
+			.setName("Correction prompt")
+			.setDesc("Use {{text}} for the transcription")
 			.addTextArea((text) =>
 				text
 					.setPlaceholder("Fix transcription errors...")
@@ -185,12 +219,9 @@ export class SttLlmSettingTab extends PluginSettingTab {
 					})
 			);
 
-		// Summarization Settings
-		containerEl.createEl("h2", { text: "Summarization" });
-
-		new Setting(containerEl)
-			.setName("Summarization Prompt")
-			.setDesc("Prompt template for summarization. Use {{text}} for selected text.")
+		new Setting(advancedContainer)
+			.setName("Summarization prompt")
+			.setDesc("Use {{text}} for selected text")
 			.addTextArea((text) =>
 				text
 					.setPlaceholder("Summarize the following...")
@@ -201,38 +232,9 @@ export class SttLlmSettingTab extends PluginSettingTab {
 					})
 			);
 
-		// Auto-tagging Settings
-		containerEl.createEl("h2", { text: "Auto-Tagging" });
-
-		new Setting(containerEl)
-			.setName("Prefer Existing Tags")
-			.setDesc("Prioritize tags already used in your vault")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.tagging.preferExistingTags)
-					.onChange(async (value) => {
-						this.plugin.settings.tagging.preferExistingTags = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Max New Tags")
-			.setDesc("Maximum number of new tags to generate")
-			.addSlider((slider) =>
-				slider
-					.setLimits(1, 10, 1)
-					.setValue(this.plugin.settings.tagging.maxNewTags)
-					.setDynamicTooltip()
-					.onChange(async (value) => {
-						this.plugin.settings.tagging.maxNewTags = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Tagging Prompt")
-			.setDesc("Prompt template for tag generation. Use {{content}} and {{existingTags}}.")
+		new Setting(advancedContainer)
+			.setName("Tagging prompt")
+			.setDesc("Use {{content}} and {{existingTags}}")
 			.addTextArea((text) =>
 				text
 					.setPlaceholder("Analyze and suggest tags...")
@@ -243,15 +245,12 @@ export class SttLlmSettingTab extends PluginSettingTab {
 					})
 			);
 
-		// Custom Prompt Settings
-		containerEl.createEl("h2", { text: "Custom Prompt" });
-
-		new Setting(containerEl)
-			.setName("Default Custom Prompt")
-			.setDesc("Default prompt to show in custom prompt modal (optional)")
+		new Setting(advancedContainer)
+			.setName("Default custom prompt")
+			.setDesc("Pre-fill text for custom prompt modal")
 			.addTextArea((text) =>
 				text
-					.setPlaceholder("Enter your default prompt...")
+					.setPlaceholder("Enter default prompt...")
 					.setValue(this.plugin.settings.customPrompt.defaultPrompt)
 					.onChange(async (value) => {
 						this.plugin.settings.customPrompt.defaultPrompt = value;

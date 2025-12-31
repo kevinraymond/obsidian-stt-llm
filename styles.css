@@ -348,3 +348,43 @@
 	font-size: 0.85em;
 	color: var(--text-muted);
 }
+
+/* ===== Settings Page ===== */
+.stt-llm-advanced-settings {
+	margin-top: 24px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+}
+
+.stt-llm-advanced-settings summary {
+	padding: 12px 16px;
+	cursor: pointer;
+	font-weight: 500;
+	color: var(--text-muted);
+	user-select: none;
+}
+
+.stt-llm-advanced-settings summary:hover {
+	color: var(--text-normal);
+}
+
+.stt-llm-advanced-settings[open] summary {
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.stt-llm-advanced-content {
+	padding: 8px 16px 16px;
+}
+
+.stt-llm-advanced-content h3 {
+	margin-top: 16px;
+	margin-bottom: 8px;
+	font-size: 0.9em;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.stt-llm-advanced-content h3:first-child {
+	margin-top: 8px;
+}
