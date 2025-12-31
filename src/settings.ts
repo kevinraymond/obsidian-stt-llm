@@ -1,3 +1,28 @@
+// Common language options for the dropdown
+export const LANGUAGE_OPTIONS: { code: string; name: string }[] = [
+	{ code: "en", name: "English" },
+	{ code: "es", name: "Spanish" },
+	{ code: "fr", name: "French" },
+	{ code: "de", name: "German" },
+	{ code: "it", name: "Italian" },
+	{ code: "pt", name: "Portuguese" },
+	{ code: "ru", name: "Russian" },
+	{ code: "zh", name: "Chinese" },
+	{ code: "ja", name: "Japanese" },
+	{ code: "ko", name: "Korean" },
+	{ code: "ar", name: "Arabic" },
+	{ code: "hi", name: "Hindi" },
+	{ code: "nl", name: "Dutch" },
+	{ code: "pl", name: "Polish" },
+	{ code: "tr", name: "Turkish" },
+	{ code: "vi", name: "Vietnamese" },
+	{ code: "th", name: "Thai" },
+	{ code: "id", name: "Indonesian" },
+	{ code: "uk", name: "Ukrainian" },
+	{ code: "cs", name: "Czech" },
+	{ code: "auto", name: "Auto-detect" },
+];
+
 export interface SttLlmSettings {
 	// STT Server Settings
 	stt: {
@@ -93,3 +118,11 @@ Return ONLY a JSON array of tag strings (without # prefix), e.g., ["tag1", "tag2
 		defaultPrompt: "",
 	},
 };
+
+/**
+ * Check if LLM is configured (has a valid base URL and model).
+ * Used to conditionally show LLM-related UI elements.
+ */
+export function isLlmConfigured(settings: SttLlmSettings): boolean {
+	return !!(settings.llm.baseUrl && settings.llm.model);
+}

@@ -1,5 +1,5 @@
 import { Editor, MarkdownView, Menu, Notice, Plugin } from "obsidian";
-import { SttLlmSettings, DEFAULT_SETTINGS } from "./settings";
+import { SttLlmSettings, DEFAULT_SETTINGS, isLlmConfigured } from "./settings";
 import { SttLlmSettingTab } from "./settingsTab";
 import { LlmService } from "./services/llmService";
 import { TagService } from "./services/tagService";
@@ -15,6 +15,7 @@ export default class SttLlmPlugin extends Plugin {
 	sttService: SttService;
 	recordingManager: RecordingManager;
 	statusBarManager: StatusBarManager;
+	private llmRibbonIcon: HTMLElement | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -45,56 +46,14 @@ export default class SttLlmPlugin extends Plugin {
 		// Add settings tab
 		this.addSettingTab(new SttLlmSettingTab(this.app, this));
 
-		// Register sidebar view
+		// Register sidebar view (always register, but icon is conditional)
 		this.registerView(LLM_VIEW_TYPE, (leaf) => new LlmSidebarView(leaf, this));
-
-		// Add ribbon icon for LLM sidebar
-		this.addRibbonIcon("bot", "Open LLM Assistant", async () => {
-			await this.activateSidebarView();
-		});
-
-		// Add command to open sidebar
-		this.addCommand({
-			id: "open-llm-sidebar",
-			name: "Open LLM Assistant panel",
-			callback: async () => {
-				await this.activateSidebarView();
-			},
-		});
 
 		// Initialize status bar
 		this.statusBarManager = new StatusBarManager(this);
-		this.statusBarManager.addButton("summarize", {
-			icon: "file-text",
-			tooltip: "Summarize Selection",
-			onClick: async () => {
-				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (view?.editor) {
-					await this.summarizeSelection(view.editor);
-				} else {
-					new Notice("No active editor");
-				}
-			},
-		});
-		this.statusBarManager.addButton("custom-prompt", {
-			icon: "message-square",
-			tooltip: "Custom Prompt",
-			onClick: async () => {
-				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (view?.editor) {
-					await this.customPrompt(view.editor);
-				} else {
-					new Notice("No active editor");
-				}
-			},
-		});
-		this.statusBarManager.addButton("auto-tag", {
-			icon: "tags",
-			tooltip: "Generate Tags",
-			onClick: async () => {
-				await this.autoTagCurrentNote();
-			},
-		});
+
+		// Setup LLM-related UI (conditional on LLM being configured)
+		this.setupLlmUI();
 
 		console.log("STT & LLM plugin loaded");
 	}
@@ -132,6 +91,74 @@ export default class SttLlmPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+		// Refresh LLM UI when settings change
+		this.setupLlmUI();
+	}
+
+	/**
+	 * Setup LLM-related UI elements.
+	 * Called on load and when settings change.
+	 * Shows/hides LLM features based on whether LLM is configured.
+	 */
+	private setupLlmUI(): void {
+		const llmEnabled = isLlmConfigured(this.settings);
+
+		// LLM ribbon icon
+		if (llmEnabled && !this.llmRibbonIcon) {
+			this.llmRibbonIcon = this.addRibbonIcon("bot", "Open LLM Assistant", async () => {
+				await this.activateSidebarView();
+			});
+		} else if (!llmEnabled && this.llmRibbonIcon) {
+			this.llmRibbonIcon.remove();
+			this.llmRibbonIcon = null;
+		}
+
+		// Status bar LLM buttons
+		if (llmEnabled) {
+			// Add buttons if they don't exist
+			if (!this.statusBarManager.hasButton("summarize")) {
+				this.statusBarManager.addButton("summarize", {
+					icon: "file-text",
+					tooltip: "Summarize Selection",
+					onClick: async () => {
+						const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+						if (view?.editor) {
+							await this.summarizeSelection(view.editor);
+						} else {
+							new Notice("No active editor");
+						}
+					},
+				});
+			}
+			if (!this.statusBarManager.hasButton("custom-prompt")) {
+				this.statusBarManager.addButton("custom-prompt", {
+					icon: "message-square",
+					tooltip: "Custom Prompt",
+					onClick: async () => {
+						const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+						if (view?.editor) {
+							await this.customPrompt(view.editor);
+						} else {
+							new Notice("No active editor");
+						}
+					},
+				});
+			}
+			if (!this.statusBarManager.hasButton("auto-tag")) {
+				this.statusBarManager.addButton("auto-tag", {
+					icon: "tags",
+					tooltip: "Generate Tags",
+					onClick: async () => {
+						await this.autoTagCurrentNote();
+					},
+				});
+			}
+		} else {
+			// Remove LLM buttons
+			this.statusBarManager.removeButton("summarize");
+			this.statusBarManager.removeButton("custom-prompt");
+			this.statusBarManager.removeButton("auto-tag");
+		}
 	}
 
 	private registerCommands() {
@@ -175,6 +202,11 @@ export default class SttLlmPlugin extends Plugin {
 	private registerContextMenu(): void {
 		this.registerEvent(
 			this.app.workspace.on("editor-menu", (menu: Menu, editor: Editor) => {
+				// Only show LLM menu items if LLM is configured
+				if (!isLlmConfigured(this.settings)) {
+					return;
+				}
+
 				const selection = editor.getSelection();
 
 				menu.addSeparator();

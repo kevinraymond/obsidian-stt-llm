@@ -44,4 +44,16 @@ export class StatusBarManager {
 			}
 		}
 	}
+
+	hasButton(id: string): boolean {
+		return this.buttons.has(id);
+	}
+
+	removeButton(id: string): void {
+		const button = this.buttons.get(id);
+		if (button) {
+			button.remove();
+			this.buttons.delete(id);
+		}
+	}
 }

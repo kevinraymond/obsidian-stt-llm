@@ -1,5 +1,6 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type SttLlmPlugin from "./main";
+import { LANGUAGE_OPTIONS, isLlmConfigured } from "./settings";
 
 export class SttLlmSettingTab extends PluginSettingTab {
 	plugin: SttLlmPlugin;
@@ -27,20 +28,44 @@ export class SttLlmSettingTab extends PluginSettingTab {
 						this.plugin.settings.stt.serverUrl = value;
 						await this.plugin.saveSettings();
 					})
+			)
+			.addButton((button) =>
+				button.setButtonText("Test Connection").onClick(async () => {
+					const url = this.plugin.settings.stt.serverUrl;
+					new Notice("Testing connection...");
+					try {
+						const ws = new WebSocket(url);
+						await new Promise<void>((resolve, reject) => {
+							ws.onopen = () => {
+								new Notice("Connection successful!");
+								ws.close();
+								resolve();
+							};
+							ws.onerror = () => {
+								reject(new Error("Connection failed"));
+							};
+							setTimeout(() => reject(new Error("Connection timeout")), 5000);
+						});
+					} catch (error) {
+						new Notice(`Connection failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+					}
+				})
 			);
 
 		new Setting(containerEl)
 			.setName("Language")
-			.setDesc("Language code for transcription (e.g., en, es, fr)")
-			.addText((text) =>
-				text
-					.setPlaceholder("en")
-					.setValue(this.plugin.settings.stt.language)
-					.onChange(async (value) => {
-						this.plugin.settings.stt.language = value;
-						await this.plugin.saveSettings();
-					})
-			);
+			.setDesc("Language for transcription")
+			.addDropdown((dropdown) => {
+				// Add all language options
+				for (const lang of LANGUAGE_OPTIONS) {
+					dropdown.addOption(lang.code, `${lang.name} (${lang.code})`);
+				}
+				dropdown.setValue(this.plugin.settings.stt.language);
+				dropdown.onChange(async (value) => {
+					this.plugin.settings.stt.language = value;
+					await this.plugin.saveSettings();
+				});
+			});
 
 		new Setting(containerEl)
 			.setName("Auto-stop on silence")
@@ -67,7 +92,24 @@ export class SttLlmSettingTab extends PluginSettingTab {
 			);
 
 		// ===== LLM SECTION =====
-		containerEl.createEl("h2", { text: "LLM" });
+		containerEl.createEl("h2", { text: "LLM (Optional)" });
+
+		// Show LLM status
+		const llmConfigured = isLlmConfigured(this.plugin.settings);
+		const llmStatusEl = containerEl.createEl("div", {
+			cls: "stt-llm-status",
+		});
+		if (llmConfigured) {
+			llmStatusEl.createEl("span", {
+				text: "LLM features are enabled",
+				cls: "stt-llm-status-enabled",
+			});
+		} else {
+			llmStatusEl.createEl("span", {
+				text: "Configure LLM to enable summarization, tagging, and custom prompts",
+				cls: "stt-llm-status-disabled",
+			});
+		}
 
 		new Setting(containerEl)
 			.setName("API Base URL")

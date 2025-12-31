@@ -114,6 +114,29 @@ module.exports = __toCommonJS(main_exports);
 var import_obsidian9 = require("obsidian");
 
 // src/settings.ts
+var LANGUAGE_OPTIONS = [
+  { code: "en", name: "English" },
+  { code: "es", name: "Spanish" },
+  { code: "fr", name: "French" },
+  { code: "de", name: "German" },
+  { code: "it", name: "Italian" },
+  { code: "pt", name: "Portuguese" },
+  { code: "ru", name: "Russian" },
+  { code: "zh", name: "Chinese" },
+  { code: "ja", name: "Japanese" },
+  { code: "ko", name: "Korean" },
+  { code: "ar", name: "Arabic" },
+  { code: "hi", name: "Hindi" },
+  { code: "nl", name: "Dutch" },
+  { code: "pl", name: "Polish" },
+  { code: "tr", name: "Turkish" },
+  { code: "vi", name: "Vietnamese" },
+  { code: "th", name: "Thai" },
+  { code: "id", name: "Indonesian" },
+  { code: "uk", name: "Ukrainian" },
+  { code: "cs", name: "Czech" },
+  { code: "auto", name: "Auto-detect" }
+];
 var DEFAULT_SETTINGS = {
   stt: {
     serverUrl: "ws://localhost:8765",
@@ -164,6 +187,9 @@ Return ONLY a JSON array of tag strings (without # prefix), e.g., ["tag1", "tag2
     defaultPrompt: ""
   }
 };
+function isLlmConfigured(settings) {
+  return !!(settings.llm.baseUrl && settings.llm.model);
+}
 
 // src/settingsTab.ts
 var import_obsidian = require("obsidian");
@@ -181,13 +207,38 @@ var SttLlmSettingTab = class extends import_obsidian.PluginSettingTab {
         this.plugin.settings.stt.serverUrl = value;
         await this.plugin.saveSettings();
       })
-    );
-    new import_obsidian.Setting(containerEl).setName("Language").setDesc("Language code for transcription (e.g., en, es, fr)").addText(
-      (text) => text.setPlaceholder("en").setValue(this.plugin.settings.stt.language).onChange(async (value) => {
-        this.plugin.settings.stt.language = value;
-        await this.plugin.saveSettings();
+    ).addButton(
+      (button) => button.setButtonText("Test Connection").onClick(async () => {
+        const url = this.plugin.settings.stt.serverUrl;
+        new import_obsidian.Notice("Testing connection...");
+        try {
+          const ws = new WebSocket(url);
+          await new Promise((resolve, reject) => {
+            ws.onopen = () => {
+              new import_obsidian.Notice("Connection successful!");
+              ws.close();
+              resolve();
+            };
+            ws.onerror = () => {
+              reject(new Error("Connection failed"));
+            };
+            setTimeout(() => reject(new Error("Connection timeout")), 5e3);
+          });
+        } catch (error) {
+          new import_obsidian.Notice(`Connection failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+        }
       })
     );
+    new import_obsidian.Setting(containerEl).setName("Language").setDesc("Language for transcription").addDropdown((dropdown) => {
+      for (const lang of LANGUAGE_OPTIONS) {
+        dropdown.addOption(lang.code, `${lang.name} (${lang.code})`);
+      }
+      dropdown.setValue(this.plugin.settings.stt.language);
+      dropdown.onChange(async (value) => {
+        this.plugin.settings.stt.language = value;
+        await this.plugin.saveSettings();
+      });
+    });
     new import_obsidian.Setting(containerEl).setName("Auto-stop on silence").setDesc("Stop recording automatically when you stop speaking").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.vad.enabled).onChange(async (value) => {
         this.plugin.settings.vad.enabled = value;
@@ -200,7 +251,22 @@ var SttLlmSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
-    containerEl.createEl("h2", { text: "LLM" });
+    containerEl.createEl("h2", { text: "LLM (Optional)" });
+    const llmConfigured = isLlmConfigured(this.plugin.settings);
+    const llmStatusEl = containerEl.createEl("div", {
+      cls: "stt-llm-status"
+    });
+    if (llmConfigured) {
+      llmStatusEl.createEl("span", {
+        text: "LLM features are enabled",
+        cls: "stt-llm-status-enabled"
+      });
+    } else {
+      llmStatusEl.createEl("span", {
+        text: "Configure LLM to enable summarization, tagging, and custom prompts",
+        cls: "stt-llm-status-disabled"
+      });
+    }
     new import_obsidian.Setting(containerEl).setName("API Base URL").setDesc("OpenAI-compatible API endpoint (Ollama, LM Studio, etc.)").addText(
       (text) => text.setPlaceholder("http://localhost:11434").setValue(this.plugin.settings.llm.baseUrl).onChange(async (value) => {
         this.plugin.settings.llm.baseUrl = value;
@@ -1069,6 +1135,16 @@ var StatusBarManager = class {
       }
     }
   }
+  hasButton(id) {
+    return this.buttons.has(id);
+  }
+  removeButton(id) {
+    const button = this.buttons.get(id);
+    if (button) {
+      button.remove();
+      this.buttons.delete(id);
+    }
+  }
 };
 
 // src/ui/llmSidebarView.ts
@@ -1247,6 +1323,10 @@ var LlmSidebarView = class extends import_obsidian7.ItemView {
 
 // src/main.ts
 var SttLlmPlugin = class extends import_obsidian9.Plugin {
+  constructor() {
+    super(...arguments);
+    this.llmRibbonIcon = null;
+  }
   async onload() {
     await this.loadSettings();
     this.llmService = new LlmService(() => this.settings.llm);
@@ -1266,48 +1346,8 @@ var SttLlmPlugin = class extends import_obsidian9.Plugin {
     this.recordingManager.setRibbonIcon(ribbonIcon);
     this.addSettingTab(new SttLlmSettingTab(this.app, this));
     this.registerView(LLM_VIEW_TYPE, (leaf) => new LlmSidebarView(leaf, this));
-    this.addRibbonIcon("bot", "Open LLM Assistant", async () => {
-      await this.activateSidebarView();
-    });
-    this.addCommand({
-      id: "open-llm-sidebar",
-      name: "Open LLM Assistant panel",
-      callback: async () => {
-        await this.activateSidebarView();
-      }
-    });
     this.statusBarManager = new StatusBarManager(this);
-    this.statusBarManager.addButton("summarize", {
-      icon: "file-text",
-      tooltip: "Summarize Selection",
-      onClick: async () => {
-        const view = this.app.workspace.getActiveViewOfType(import_obsidian9.MarkdownView);
-        if (view == null ? void 0 : view.editor) {
-          await this.summarizeSelection(view.editor);
-        } else {
-          new import_obsidian9.Notice("No active editor");
-        }
-      }
-    });
-    this.statusBarManager.addButton("custom-prompt", {
-      icon: "message-square",
-      tooltip: "Custom Prompt",
-      onClick: async () => {
-        const view = this.app.workspace.getActiveViewOfType(import_obsidian9.MarkdownView);
-        if (view == null ? void 0 : view.editor) {
-          await this.customPrompt(view.editor);
-        } else {
-          new import_obsidian9.Notice("No active editor");
-        }
-      }
-    });
-    this.statusBarManager.addButton("auto-tag", {
-      icon: "tags",
-      tooltip: "Generate Tags",
-      onClick: async () => {
-        await this.autoTagCurrentNote();
-      }
-    });
+    this.setupLlmUI();
     console.log("STT & LLM plugin loaded");
   }
   onunload() {
@@ -1337,6 +1377,66 @@ var SttLlmPlugin = class extends import_obsidian9.Plugin {
   }
   async saveSettings() {
     await this.saveData(this.settings);
+    this.setupLlmUI();
+  }
+  /**
+   * Setup LLM-related UI elements.
+   * Called on load and when settings change.
+   * Shows/hides LLM features based on whether LLM is configured.
+   */
+  setupLlmUI() {
+    const llmEnabled = isLlmConfigured(this.settings);
+    if (llmEnabled && !this.llmRibbonIcon) {
+      this.llmRibbonIcon = this.addRibbonIcon("bot", "Open LLM Assistant", async () => {
+        await this.activateSidebarView();
+      });
+    } else if (!llmEnabled && this.llmRibbonIcon) {
+      this.llmRibbonIcon.remove();
+      this.llmRibbonIcon = null;
+    }
+    if (llmEnabled) {
+      if (!this.statusBarManager.hasButton("summarize")) {
+        this.statusBarManager.addButton("summarize", {
+          icon: "file-text",
+          tooltip: "Summarize Selection",
+          onClick: async () => {
+            const view = this.app.workspace.getActiveViewOfType(import_obsidian9.MarkdownView);
+            if (view == null ? void 0 : view.editor) {
+              await this.summarizeSelection(view.editor);
+            } else {
+              new import_obsidian9.Notice("No active editor");
+            }
+          }
+        });
+      }
+      if (!this.statusBarManager.hasButton("custom-prompt")) {
+        this.statusBarManager.addButton("custom-prompt", {
+          icon: "message-square",
+          tooltip: "Custom Prompt",
+          onClick: async () => {
+            const view = this.app.workspace.getActiveViewOfType(import_obsidian9.MarkdownView);
+            if (view == null ? void 0 : view.editor) {
+              await this.customPrompt(view.editor);
+            } else {
+              new import_obsidian9.Notice("No active editor");
+            }
+          }
+        });
+      }
+      if (!this.statusBarManager.hasButton("auto-tag")) {
+        this.statusBarManager.addButton("auto-tag", {
+          icon: "tags",
+          tooltip: "Generate Tags",
+          onClick: async () => {
+            await this.autoTagCurrentNote();
+          }
+        });
+      }
+    } else {
+      this.statusBarManager.removeButton("summarize");
+      this.statusBarManager.removeButton("custom-prompt");
+      this.statusBarManager.removeButton("auto-tag");
+    }
   }
   registerCommands() {
     this.addCommand({
@@ -1371,6 +1471,9 @@ var SttLlmPlugin = class extends import_obsidian9.Plugin {
   registerContextMenu() {
     this.registerEvent(
       this.app.workspace.on("editor-menu", (menu, editor) => {
+        if (!isLlmConfigured(this.settings)) {
+          return;
+        }
         const selection = editor.getSelection();
         menu.addSeparator();
         if (selection) {
