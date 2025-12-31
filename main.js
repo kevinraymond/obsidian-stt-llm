@@ -29,11 +29,11 @@ var customPromptModal_exports = {};
 __export(customPromptModal_exports, {
   CustomPromptModal: () => CustomPromptModal
 });
-var import_obsidian8, CustomPromptModal;
+var import_obsidian7, CustomPromptModal;
 var init_customPromptModal = __esm({
   "src/ui/customPromptModal.ts"() {
-    import_obsidian8 = require("obsidian");
-    CustomPromptModal = class extends import_obsidian8.Modal {
+    import_obsidian7 = require("obsidian");
+    CustomPromptModal = class extends import_obsidian7.Modal {
       constructor(app, defaultPrompt, onSubmit) {
         super(app);
         this.prompt = defaultPrompt;
@@ -97,7 +97,7 @@ __export(main_exports, {
   default: () => SttLlmPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian9 = require("obsidian");
+var import_obsidian8 = require("obsidian");
 
 // src/settings.ts
 var LANGUAGE_OPTIONS = [
@@ -1503,115 +1503,8 @@ var StatusBarManager = class {
   }
 };
 
-// src/ui/llmSidebarView.ts
-var import_obsidian7 = require("obsidian");
-var LLM_VIEW_TYPE = "stt-llm-sidebar";
-var LlmSidebarView = class extends import_obsidian7.ItemView {
-  constructor(leaf, plugin) {
-    super(leaf);
-    this.plugin = plugin;
-  }
-  getViewType() {
-    return LLM_VIEW_TYPE;
-  }
-  getDisplayText() {
-    return "LLM Assistant";
-  }
-  getIcon() {
-    return "bot";
-  }
-  async onOpen() {
-    const container = this.containerEl.children[1];
-    container.empty();
-    container.addClass("stt-llm-sidebar");
-    const header = container.createEl("div", { cls: "stt-llm-sidebar-header" });
-    header.createEl("h3", { text: "LLM Assistant" });
-    const actionsSection = container.createEl("div", { cls: "stt-llm-sidebar-section" });
-    actionsSection.createEl("h4", { text: "Quick Actions" });
-    const actionsContainer = actionsSection.createEl("div", { cls: "stt-llm-actions" });
-    this.renderActionButtons(actionsContainer);
-    container.createEl("hr", { cls: "stt-llm-divider" });
-    const settingsSection = container.createEl("div", { cls: "stt-llm-sidebar-section" });
-    settingsSection.createEl("h4", { text: "Settings" });
-    const settingsLink = settingsSection.createEl("button", {
-      cls: "stt-llm-settings-link"
-    });
-    const iconSpan = settingsLink.createSpan({ cls: "stt-llm-btn-icon" });
-    (0, import_obsidian7.setIcon)(iconSpan, "settings");
-    settingsLink.createSpan({ text: "Open LLM Settings" });
-    settingsLink.addEventListener("click", () => {
-      this.app.setting.open();
-      this.app.setting.openTabById(this.plugin.manifest.id);
-    });
-    const modelInfo = settingsSection.createEl("div", { cls: "stt-llm-model-info" });
-    modelInfo.createEl("span", {
-      text: `Model: ${this.plugin.settings.llm.model}`,
-      cls: "stt-llm-model-label"
-    });
-  }
-  renderActionButtons(container) {
-    const actions = [
-      {
-        id: "summarize",
-        label: "Summarize Selection",
-        icon: "file-text",
-        description: "Summarize selected text"
-      },
-      {
-        id: "custom-prompt",
-        label: "Custom Prompt",
-        icon: "message-square",
-        description: "Send selection with custom prompt"
-      },
-      {
-        id: "auto-tag",
-        label: "Generate Tags",
-        icon: "tags",
-        description: "Auto-generate tags for note"
-      },
-      {
-        id: "toggle-recording",
-        label: "Voice Input",
-        icon: "mic",
-        description: "Start speech-to-text"
-      }
-    ];
-    for (const action of actions) {
-      const btn = container.createEl("button", {
-        cls: "stt-llm-action-btn",
-        attr: { "data-action": action.id }
-      });
-      const iconSpan = btn.createSpan({ cls: "stt-llm-action-icon" });
-      (0, import_obsidian7.setIcon)(iconSpan, action.icon);
-      const textContainer = btn.createEl("div", { cls: "stt-llm-action-text" });
-      textContainer.createEl("span", { text: action.label, cls: "stt-llm-action-label" });
-      textContainer.createEl("span", { text: action.description, cls: "stt-llm-action-desc" });
-      btn.addEventListener("click", async () => {
-        await this.executeAction(action.id);
-      });
-    }
-  }
-  async executeAction(actionId) {
-    if (actionId === "summarize" || actionId === "custom-prompt") {
-      const view = this.app.workspace.getActiveViewOfType(import_obsidian7.MarkdownView);
-      if (!(view == null ? void 0 : view.editor)) {
-        new import_obsidian7.Notice("No active editor");
-        return;
-      }
-    }
-    const commandId = `stt-llm:${actionId}`;
-    this.app.commands.executeCommandById(commandId);
-  }
-  async onClose() {
-  }
-};
-
 // src/main.ts
-var SttLlmPlugin = class extends import_obsidian9.Plugin {
-  constructor() {
-    super(...arguments);
-    this.llmRibbonIcon = null;
-  }
+var SttLlmPlugin = class extends import_obsidian8.Plugin {
   async onload() {
     await this.loadSettings();
     this.llmService = new LlmService(() => this.settings.llm);
@@ -1630,30 +1523,12 @@ var SttLlmPlugin = class extends import_obsidian9.Plugin {
     });
     this.recordingManager.setRibbonIcon(ribbonIcon);
     this.addSettingTab(new SttLlmSettingTab(this.app, this));
-    this.registerView(LLM_VIEW_TYPE, (leaf) => new LlmSidebarView(leaf, this));
     this.statusBarManager = new StatusBarManager(this);
     this.setupLlmUI();
   }
   onunload() {
     var _a;
     (_a = this.recordingManager) == null ? void 0 : _a.destroy();
-    this.app.workspace.detachLeavesOfType(LLM_VIEW_TYPE);
-  }
-  async activateSidebarView() {
-    const { workspace } = this.app;
-    const leaves = workspace.getLeavesOfType(LLM_VIEW_TYPE);
-    if (leaves.length > 0) {
-      leaves.forEach((leaf) => leaf.detach());
-    } else {
-      const rightLeaf = workspace.getRightLeaf(false);
-      if (rightLeaf) {
-        await rightLeaf.setViewState({
-          type: LLM_VIEW_TYPE,
-          active: true
-        });
-        workspace.revealLeaf(rightLeaf);
-      }
-    }
   }
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -1669,25 +1544,17 @@ var SttLlmPlugin = class extends import_obsidian9.Plugin {
    */
   setupLlmUI() {
     const llmEnabled = isLlmConfigured(this.settings);
-    if (llmEnabled && !this.llmRibbonIcon) {
-      this.llmRibbonIcon = this.addRibbonIcon("bot", "Open LLM Assistant", async () => {
-        await this.activateSidebarView();
-      });
-    } else if (!llmEnabled && this.llmRibbonIcon) {
-      this.llmRibbonIcon.remove();
-      this.llmRibbonIcon = null;
-    }
     if (llmEnabled) {
       if (!this.statusBarManager.hasButton("summarize")) {
         this.statusBarManager.addButton("summarize", {
           icon: "file-text",
           tooltip: "Summarize Selection",
           onClick: async () => {
-            const view = this.app.workspace.getActiveViewOfType(import_obsidian9.MarkdownView);
+            const view = this.app.workspace.getActiveViewOfType(import_obsidian8.MarkdownView);
             if (view == null ? void 0 : view.editor) {
               await this.summarizeSelection(view.editor);
             } else {
-              new import_obsidian9.Notice("No active editor");
+              new import_obsidian8.Notice("No active editor");
             }
           }
         });
@@ -1697,11 +1564,11 @@ var SttLlmPlugin = class extends import_obsidian9.Plugin {
           icon: "message-square",
           tooltip: "Custom Prompt",
           onClick: async () => {
-            const view = this.app.workspace.getActiveViewOfType(import_obsidian9.MarkdownView);
+            const view = this.app.workspace.getActiveViewOfType(import_obsidian8.MarkdownView);
             if (view == null ? void 0 : view.editor) {
               await this.customPrompt(view.editor);
             } else {
-              new import_obsidian9.Notice("No active editor");
+              new import_obsidian8.Notice("No active editor");
             }
           }
         });
@@ -1782,32 +1649,32 @@ var SttLlmPlugin = class extends import_obsidian9.Plugin {
   async summarizeSelection(editor) {
     const selection = editor.getSelection();
     if (!selection) {
-      new import_obsidian9.Notice("No text selected");
+      new import_obsidian8.Notice("No text selected");
       return;
     }
-    new import_obsidian9.Notice("Summarizing...");
+    new import_obsidian8.Notice("Summarizing...");
     try {
       const prompt = this.settings.summarization.prompt.replace("{{text}}", selection);
       let summary = await this.llmService.complete(prompt);
       summary = summary.replace(/\*{0,2}Summary:?\*{0,2}\s*/gi, "").trim();
       const cursor = editor.getCursor("to");
       editor.replaceRange("\n\n**Summary:**\n" + summary, cursor);
-      new import_obsidian9.Notice("Summary inserted");
+      new import_obsidian8.Notice("Summary inserted");
     } catch (error) {
-      new import_obsidian9.Notice(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
+      new import_obsidian8.Notice(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
   async customPrompt(editor) {
     const selection = editor.getSelection();
     if (!selection) {
-      new import_obsidian9.Notice("No text selected");
+      new import_obsidian8.Notice("No text selected");
       return;
     }
     const { CustomPromptModal: CustomPromptModal2 } = await Promise.resolve().then(() => (init_customPromptModal(), customPromptModal_exports));
     new CustomPromptModal2(this.app, this.settings.customPrompt.defaultPrompt, async (userPrompt) => {
       if (!userPrompt)
         return;
-      new import_obsidian9.Notice("Processing...");
+      new import_obsidian8.Notice("Processing...");
       try {
         const fullPrompt = `${userPrompt}
 
@@ -1816,9 +1683,9 @@ ${selection}`;
         const result = await this.llmService.complete(fullPrompt);
         const cursor = editor.getCursor("to");
         editor.replaceRange("\n\n" + result, cursor);
-        new import_obsidian9.Notice("Response inserted");
+        new import_obsidian8.Notice("Response inserted");
       } catch (error) {
-        new import_obsidian9.Notice(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
+        new import_obsidian8.Notice(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
       }
     }).open();
   }
@@ -1826,10 +1693,10 @@ ${selection}`;
     var _a;
     const activeFile = this.app.workspace.getActiveFile();
     if (!activeFile) {
-      new import_obsidian9.Notice("No active note");
+      new import_obsidian8.Notice("No active note");
       return;
     }
-    new import_obsidian9.Notice("Generating tags...");
+    new import_obsidian8.Notice("Generating tags...");
     try {
       let content = await this.app.vault.read(activeFile);
       content = content.replace(/^---\n[\s\S]*?\n---\n?/, "").trim();
@@ -1880,12 +1747,12 @@ This note already has these tags (do NOT suggest these): ${existingNoteTags.join
         }
       });
       if (newTags.length > 0) {
-        new import_obsidian9.Notice(`Added ${newTags.length} new tag(s): ${newTags.join(", ")}`);
+        new import_obsidian8.Notice(`Added ${newTags.length} new tag(s): ${newTags.join(", ")}`);
       } else {
-        new import_obsidian9.Notice("No new tags to add (all suggested tags already exist)");
+        new import_obsidian8.Notice("No new tags to add (all suggested tags already exist)");
       }
     } catch (error) {
-      new import_obsidian9.Notice(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
+      new import_obsidian8.Notice(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 };

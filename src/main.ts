@@ -6,7 +6,6 @@ import { TagService } from "./services/tagService";
 import { SttService } from "./services/sttService";
 import { RecordingManager } from "./features/recordingManager";
 import { StatusBarManager } from "./ui/statusBarManager";
-import { LlmSidebarView, LLM_VIEW_TYPE } from "./ui/llmSidebarView";
 
 export default class SttLlmPlugin extends Plugin {
 	settings: SttLlmSettings;
@@ -15,7 +14,6 @@ export default class SttLlmPlugin extends Plugin {
 	sttService: SttService;
 	recordingManager: RecordingManager;
 	statusBarManager: StatusBarManager;
-	private llmRibbonIcon: HTMLElement | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -46,9 +44,6 @@ export default class SttLlmPlugin extends Plugin {
 		// Add settings tab
 		this.addSettingTab(new SttLlmSettingTab(this.app, this));
 
-		// Register sidebar view (always register, but icon is conditional)
-		this.registerView(LLM_VIEW_TYPE, (leaf) => new LlmSidebarView(leaf, this));
-
 		// Initialize status bar
 		this.statusBarManager = new StatusBarManager(this);
 
@@ -59,28 +54,6 @@ export default class SttLlmPlugin extends Plugin {
 
 	onunload() {
 		this.recordingManager?.destroy();
-		this.app.workspace.detachLeavesOfType(LLM_VIEW_TYPE);
-	}
-
-	async activateSidebarView(): Promise<void> {
-		const { workspace } = this.app;
-
-		const leaves = workspace.getLeavesOfType(LLM_VIEW_TYPE);
-
-		if (leaves.length > 0) {
-			// Panel exists - close it
-			leaves.forEach((leaf) => leaf.detach());
-		} else {
-			// Panel doesn't exist - open it
-			const rightLeaf = workspace.getRightLeaf(false);
-			if (rightLeaf) {
-				await rightLeaf.setViewState({
-					type: LLM_VIEW_TYPE,
-					active: true,
-				});
-				workspace.revealLeaf(rightLeaf);
-			}
-		}
 	}
 
 	async loadSettings() {
@@ -100,16 +73,6 @@ export default class SttLlmPlugin extends Plugin {
 	 */
 	private setupLlmUI(): void {
 		const llmEnabled = isLlmConfigured(this.settings);
-
-		// LLM ribbon icon
-		if (llmEnabled && !this.llmRibbonIcon) {
-			this.llmRibbonIcon = this.addRibbonIcon("bot", "Open LLM Assistant", async () => {
-				await this.activateSidebarView();
-			});
-		} else if (!llmEnabled && this.llmRibbonIcon) {
-			this.llmRibbonIcon.remove();
-			this.llmRibbonIcon = null;
-		}
 
 		// Status bar LLM buttons
 		if (llmEnabled) {
