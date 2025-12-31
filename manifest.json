@@ -4,7 +4,7 @@
 	"version": "0.1.0",
 	"minAppVersion": "1.0.0",
 	"description": "Local speech-to-text transcription and LLM-powered text operations (summarize, auto-tag, custom prompts).",
-	"author": "Kevin",
+	"author": "kevinraymond",
 	"isDesktopOnly": true,
-	"fundingUrl": ""
+	"fundingUrl": "https://github.com/sponsors/kevinraymond"
 }
