@@ -69,7 +69,7 @@ Text: {{text}}`,
 		maxTokens: 2048,
 	},
 	summarization: {
-		prompt: `Summarize the following text concisely. Focus on the key points and main ideas.
+		prompt: `Provide a single, concise summary of the following text. Focus on the key points and main ideas. Output ONLY the summary paragraph(s) - no headers, labels, or multiple versions.
 
 Text:
 {{text}}`,

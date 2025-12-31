@@ -140,7 +140,7 @@ Text: {{text}}`
     maxTokens: 2048
   },
   summarization: {
-    prompt: `Summarize the following text concisely. Focus on the key points and main ideas.
+    prompt: `Provide a single, concise summary of the following text. Focus on the key points and main ideas. Output ONLY the summary paragraph(s) - no headers, labels, or multiple versions.
 
 Text:
 {{text}}`
@@ -1389,7 +1389,8 @@ var SttLlmPlugin = class extends import_obsidian9.Plugin {
     new import_obsidian9.Notice("Summarizing...");
     try {
       const prompt = this.settings.summarization.prompt.replace("{{text}}", selection);
-      const summary = await this.llmService.complete(prompt);
+      let summary = await this.llmService.complete(prompt);
+      summary = summary.replace(/\*{0,2}Summary:?\*{0,2}\s*/gi, "").trim();
       const cursor = editor.getCursor("to");
       editor.replaceRange("\n\n**Summary:**\n" + summary, cursor);
       new import_obsidian9.Notice("Summary inserted");

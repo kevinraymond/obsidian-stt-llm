@@ -219,7 +219,10 @@ export default class SttLlmPlugin extends Plugin {
 
 		try {
 			const prompt = this.settings.summarization.prompt.replace("{{text}}", selection);
-			const summary = await this.llmService.complete(prompt);
+			let summary = await this.llmService.complete(prompt);
+
+			// Strip any "Summary:" headers the LLM might have included
+			summary = summary.replace(/\*{0,2}Summary:?\*{0,2}\s*/gi, "").trim();
 
 			// Insert summary after selection
 			const cursor = editor.getCursor("to");
