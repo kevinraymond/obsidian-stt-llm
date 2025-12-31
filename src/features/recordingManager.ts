@@ -213,9 +213,9 @@ export class RecordingManager {
 	}
 
 	private async handleRecordingComplete(): Promise<void> {
-		let text = this.finalTranscript || this.modal?.getTranscript() || "";
+		const originalText = this.finalTranscript || this.modal?.getTranscript() || "";
 
-		if (!text.trim()) {
+		if (!originalText.trim()) {
 			new Notice("No speech detected");
 			this.cleanup();
 			return;
@@ -225,13 +225,28 @@ export class RecordingManager {
 		if (settings.correction.enabled) {
 			try {
 				this.modal?.updateStatus("Applying LLM correction...");
-				text = await this.llmService.correctTranscription(text, settings.correction.prompt);
+				const correctedText = await this.llmService.correctTranscription(
+					originalText,
+					settings.correction.prompt
+				);
+
+				// Insert both original and corrected with a note
+				const combined = `${correctedText}
+
+> [!info] LLM Correction Applied
+> **Original transcript:**
+> ${originalText.split("\n").join("\n> ")}`;
+
+				this.insertAtCursor(combined);
 			} catch (error) {
 				console.error("LLM correction failed:", error);
+				// Fall back to original text on error
+				this.insertAtCursor(originalText);
 			}
+		} else {
+			this.insertAtCursor(originalText);
 		}
 
-		this.insertAtCursor(text);
 		this.cleanup();
 	}
 

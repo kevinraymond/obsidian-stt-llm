@@ -908,8 +908,8 @@ var RecordingManager = class {
   }
   async handleRecordingComplete() {
     var _a, _b;
-    let text = this.finalTranscript || ((_a = this.modal) == null ? void 0 : _a.getTranscript()) || "";
-    if (!text.trim()) {
+    const originalText = this.finalTranscript || ((_a = this.modal) == null ? void 0 : _a.getTranscript()) || "";
+    if (!originalText.trim()) {
       new import_obsidian5.Notice("No speech detected");
       this.cleanup();
       return;
@@ -918,12 +918,23 @@ var RecordingManager = class {
     if (settings.correction.enabled) {
       try {
         (_b = this.modal) == null ? void 0 : _b.updateStatus("Applying LLM correction...");
-        text = await this.llmService.correctTranscription(text, settings.correction.prompt);
+        const correctedText = await this.llmService.correctTranscription(
+          originalText,
+          settings.correction.prompt
+        );
+        const combined = `${correctedText}
+
+> [!info] LLM Correction Applied
+> **Original transcript:**
+> ${originalText.split("\n").join("\n> ")}`;
+        this.insertAtCursor(combined);
       } catch (error) {
         console.error("LLM correction failed:", error);
+        this.insertAtCursor(originalText);
       }
+    } else {
+      this.insertAtCursor(originalText);
     }
-    this.insertAtCursor(text);
     this.cleanup();
   }
   insertAtCursor(text) {
