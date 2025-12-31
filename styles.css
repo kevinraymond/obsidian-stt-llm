@@ -1,0 +1,350 @@
+/* STT & LLM Plugin Styles */
+
+/* Recording Modal */
+.stt-recording-modal {
+	text-align: center;
+	padding: 20px;
+}
+
+.stt-status {
+	font-size: 1.2em;
+	font-weight: bold;
+	margin-bottom: 15px;
+	color: var(--text-normal);
+}
+
+.stt-indicator {
+	display: flex;
+	justify-content: center;
+	margin-bottom: 20px;
+}
+
+.stt-pulse {
+	width: 20px;
+	height: 20px;
+	background-color: var(--color-red);
+	border-radius: 50%;
+	animation: stt-pulse-animation 1.5s ease-in-out infinite;
+}
+
+@keyframes stt-pulse-animation {
+	0% {
+		transform: scale(1);
+		opacity: 1;
+	}
+	50% {
+		transform: scale(1.3);
+		opacity: 0.7;
+	}
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+/* Audio level meter */
+.stt-audio-level {
+	width: 100%;
+	height: 8px;
+	background-color: var(--background-secondary);
+	border-radius: 4px;
+	margin-bottom: 15px;
+	overflow: hidden;
+}
+
+.stt-audio-level-bar {
+	height: 100%;
+	width: 0%;
+	background: linear-gradient(90deg, var(--color-green), var(--color-yellow), var(--color-red));
+	border-radius: 4px;
+	transition: width 0.1s ease-out;
+}
+
+.stt-transcript {
+	min-height: 100px;
+	max-height: 300px;
+	overflow-y: auto;
+	padding: 15px;
+	background-color: var(--background-secondary);
+	border-radius: 8px;
+	margin-bottom: 20px;
+	text-align: left;
+	font-family: var(--font-text);
+	line-height: 1.5;
+	color: var(--text-muted);
+}
+
+.stt-transcript.stt-final {
+	color: var(--text-normal);
+}
+
+.stt-stop-btn {
+	padding: 10px 25px;
+	font-size: 1em;
+}
+
+/* Ribbon icon recording state */
+.stt-recording {
+	color: var(--color-red) !important;
+	animation: stt-ribbon-pulse 1s ease-in-out infinite;
+}
+
+@keyframes stt-ribbon-pulse {
+	0%, 100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}
+
+/* Status bar item */
+.stt-status-bar {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.stt-status-bar.recording {
+	color: var(--color-red);
+}
+
+/* Custom prompt modal */
+.stt-prompt-modal textarea {
+	width: 100%;
+	min-height: 100px;
+	margin-bottom: 15px;
+	font-family: var(--font-text);
+}
+
+/* Loading indicator */
+.stt-loading {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px;
+	color: var(--text-muted);
+}
+
+.stt-spinner {
+	width: 16px;
+	height: 16px;
+	border: 2px solid var(--background-modifier-border);
+	border-top-color: var(--interactive-accent);
+	border-radius: 50%;
+	animation: stt-spin 1s linear infinite;
+}
+
+@keyframes stt-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* ===== Status Bar Buttons ===== */
+.stt-llm-status-bar-container {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.stt-llm-status-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 2px 6px;
+	cursor: pointer;
+	border-radius: 4px;
+	transition: background-color 0.15s ease;
+}
+
+.stt-llm-status-btn:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.stt-llm-status-btn.stt-llm-loading {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
+.stt-llm-status-btn svg {
+	width: 14px;
+	height: 14px;
+}
+
+/* ===== Sidebar View ===== */
+.stt-llm-sidebar {
+	padding: 16px;
+	height: 100%;
+	overflow-y: auto;
+}
+
+.stt-llm-sidebar-header h3 {
+	margin: 0 0 16px 0;
+	font-size: 1.2em;
+	font-weight: 600;
+}
+
+.stt-llm-sidebar-section {
+	margin-bottom: 16px;
+}
+
+.stt-llm-sidebar-section h4 {
+	margin: 0 0 12px 0;
+	font-size: 0.9em;
+	font-weight: 500;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.stt-llm-divider {
+	border: none;
+	border-top: 1px solid var(--background-modifier-border);
+	margin: 16px 0;
+}
+
+/* Action Buttons */
+.stt-llm-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.stt-llm-action-btn {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px;
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	cursor: pointer;
+	text-align: left;
+	transition: all 0.15s ease;
+}
+
+.stt-llm-action-btn:hover {
+	background-color: var(--background-modifier-hover);
+	border-color: var(--interactive-accent);
+}
+
+.stt-llm-action-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 32px;
+	height: 32px;
+	background-color: var(--interactive-accent);
+	border-radius: 6px;
+	color: var(--text-on-accent);
+}
+
+.stt-llm-action-icon svg {
+	width: 18px;
+	height: 18px;
+}
+
+.stt-llm-action-text {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 2px;
+	flex-grow: 1;
+}
+
+.stt-llm-action-label {
+	font-weight: 500;
+	color: var(--text-normal);
+}
+
+.stt-llm-action-desc {
+	font-size: 0.85em;
+	color: var(--text-muted);
+}
+
+/* History */
+.stt-llm-history {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.stt-llm-history-empty {
+	color: var(--text-muted);
+	font-style: italic;
+	padding: 8px 0;
+}
+
+.stt-llm-history-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px;
+	background-color: var(--background-secondary);
+	border-radius: 6px;
+	border-left: 3px solid var(--color-green);
+}
+
+.stt-llm-history-item.error {
+	border-left-color: var(--color-red);
+}
+
+.stt-llm-history-icon svg {
+	width: 14px;
+	height: 14px;
+	color: var(--text-muted);
+}
+
+.stt-llm-history-content {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.stt-llm-history-label {
+	font-size: 0.9em;
+	color: var(--text-normal);
+}
+
+.stt-llm-history-time {
+	font-size: 0.75em;
+	color: var(--text-muted);
+}
+
+/* Settings Link */
+.stt-llm-settings-link {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	background-color: transparent;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	cursor: pointer;
+	color: var(--text-normal);
+	width: 100%;
+	justify-content: center;
+}
+
+.stt-llm-settings-link:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.stt-llm-btn-icon svg {
+	width: 14px;
+	height: 14px;
+}
+
+.stt-llm-model-info {
+	margin-top: 12px;
+	padding: 8px;
+	background-color: var(--background-secondary);
+	border-radius: 6px;
+}
+
+.stt-llm-model-label {
+	font-size: 0.85em;
+	color: var(--text-muted);
+}

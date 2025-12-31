@@ -1,0 +1,10 @@
+{
+	"id": "stt-llm",
+	"name": "STT & LLM",
+	"version": "0.1.0",
+	"minAppVersion": "1.0.0",
+	"description": "Local speech-to-text transcription and LLM-powered text operations (summarize, auto-tag, custom prompts).",
+	"author": "Kevin",
+	"isDesktopOnly": true,
+	"fundingUrl": ""
+}
