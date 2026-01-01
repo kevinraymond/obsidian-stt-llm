@@ -64,7 +64,7 @@ export class RecordingManager {
 				this.modal?.showProcessing();
 			} else if (status === "ready") {
 				if (this.state === "processing") {
-					this.handleRecordingComplete();
+					void this.handleRecordingComplete();
 				}
 			} else if (status === "error") {
 				this.modal?.showError(error || "Unknown error");
@@ -81,7 +81,7 @@ export class RecordingManager {
 
 		this.sttService.on("disconnected", () => {
 			if (this.state !== "idle") {
-				new Notice("STT server disconnected");
+				new Notice("Transcription server disconnected");
 				this.cleanup();
 			}
 		});
@@ -103,7 +103,7 @@ export class RecordingManager {
 		const settings = this.getSettings();
 		this.sttService.setUrl(settings.stt.serverUrl);
 
-		this.modal = new RecordingModal(this.app, () => this.stopRecording());
+		this.modal = new RecordingModal(this.app, () => { void this.stopRecording(); });
 		this.modal.open();
 		this.modal.updateStatus("Connecting to STT server...");
 
@@ -137,7 +137,7 @@ export class RecordingManager {
 		try {
 			await this.stopAudioCapture();
 			this.sttService.stopRecording();
-		} catch (error) {
+		} catch {
 			this.cleanup();
 		}
 	}
@@ -185,7 +185,7 @@ export class RecordingManager {
 
 					if (elapsed > silenceDurationMs) {
 						// Silence threshold exceeded - auto stop
-						this.stopRecording();
+						void this.stopRecording();
 						return;
 					}
 				} else {
@@ -196,7 +196,7 @@ export class RecordingManager {
 				// Update modal with audio level and countdown
 				this.modal?.updateAudioLevel?.(level, countdown);
 			}, 100); // Check every 100ms
-		} catch (error) {
+		} catch {
 			// VAD setup failed - continue without VAD
 		}
 	}
@@ -224,7 +224,7 @@ export class RecordingManager {
 		}
 
 		// Process voice commands FIRST (before LLM correction)
-		const { processedText, warnings } =
+		const { processedText } =
 			this.voiceCommandProcessor.process(originalText);
 
 
@@ -245,7 +245,7 @@ export class RecordingManager {
 > ${originalText.split("\n").join("\n> ")}`; // Show raw original for reference
 
 				this.insertAtCursor(combined);
-			} catch (error) {
+			} catch {
 				// Fall back to processed text on error (still has formatting)
 				this.insertAtCursor(processedText);
 			}
@@ -273,7 +273,7 @@ export class RecordingManager {
 
 			new Notice("Transcription inserted");
 		} else {
-			navigator.clipboard.writeText(text);
+			void navigator.clipboard.writeText(text);
 			new Notice("No active editor. Transcription copied to clipboard.");
 		}
 	}
@@ -303,7 +303,7 @@ export class RecordingManager {
 			};
 
 			this.mediaRecorder.start(100);
-		} catch (error) {
+		} catch {
 			throw new Error("Failed to access microphone. Please check permissions.");
 		}
 	}
@@ -336,10 +336,10 @@ export class RecordingManager {
 		if (this.ribbonIcon) {
 			if (isRecording) {
 				this.ribbonIcon.addClass("stt-recording");
-				this.ribbonIcon.setAttribute("aria-label", "Stop Recording");
+				this.ribbonIcon.setAttribute("aria-label", "Stop recording");
 			} else {
 				this.ribbonIcon.removeClass("stt-recording");
-				this.ribbonIcon.setAttribute("aria-label", "Start STT Recording");
+				this.ribbonIcon.setAttribute("aria-label", "Start transcription");
 			}
 		}
 	}

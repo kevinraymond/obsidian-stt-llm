@@ -42,7 +42,7 @@ export class RecordingModal extends Modal {
 
 		// Stop button
 		this.stopBtn = contentEl.createEl("button", {
-			text: "Stop Recording",
+			text: "Stop recording",
 			cls: "stt-stop-btn mod-cta",
 		});
 		this.stopBtn.addEventListener("click", () => {

@@ -1,4 +1,4 @@
-import { App, Modal, Setting } from "obsidian";
+import { App, Modal } from "obsidian";
 
 export class CustomPromptModal extends Modal {
 	private prompt: string;
@@ -15,7 +15,7 @@ export class CustomPromptModal extends Modal {
 		contentEl.empty();
 		contentEl.addClass("stt-prompt-modal");
 
-		contentEl.createEl("h2", { text: "Custom Prompt" });
+		contentEl.createEl("h2", { text: "Custom prompt" });
 
 		contentEl.createEl("p", {
 			text: "Enter your prompt. The selected text will be appended.",

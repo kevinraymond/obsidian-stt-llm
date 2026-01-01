@@ -36,8 +36,8 @@ export default class SttLlmPlugin extends Plugin {
 		this.registerContextMenu();
 
 		// Add ribbon icon for STT
-		const ribbonIcon = this.addRibbonIcon("mic", "Start STT Recording", async () => {
-			await this.recordingManager.toggleRecording();
+		const ribbonIcon = this.addRibbonIcon("mic", "Start transcription", () => {
+			void this.recordingManager.toggleRecording();
 		});
 		this.recordingManager.setRibbonIcon(ribbonIcon);
 
@@ -80,11 +80,11 @@ export default class SttLlmPlugin extends Plugin {
 			if (!this.statusBarManager.hasButton("summarize")) {
 				this.statusBarManager.addButton("summarize", {
 					icon: "file-text",
-					tooltip: "Summarize Selection",
-					onClick: async () => {
+					tooltip: "Summarize selection",
+					onClick: () => {
 						const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 						if (view?.editor) {
-							await this.summarizeSelection(view.editor);
+							void this.summarizeSelection(view.editor);
 						} else {
 							new Notice("No active editor");
 						}
@@ -94,11 +94,11 @@ export default class SttLlmPlugin extends Plugin {
 			if (!this.statusBarManager.hasButton("custom-prompt")) {
 				this.statusBarManager.addButton("custom-prompt", {
 					icon: "message-square",
-					tooltip: "Custom Prompt",
-					onClick: async () => {
+					tooltip: "Custom prompt",
+					onClick: () => {
 						const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 						if (view?.editor) {
-							await this.customPrompt(view.editor);
+							void this.customPrompt(view.editor);
 						} else {
 							new Notice("No active editor");
 						}
@@ -108,9 +108,9 @@ export default class SttLlmPlugin extends Plugin {
 			if (!this.statusBarManager.hasButton("auto-tag")) {
 				this.statusBarManager.addButton("auto-tag", {
 					icon: "tags",
-					tooltip: "Generate Tags",
-					onClick: async () => {
-						await this.autoTagCurrentNote();
+					tooltip: "Generate tags",
+					onClick: () => {
+						void this.autoTagCurrentNote();
 					},
 				});
 			}
@@ -153,7 +153,7 @@ export default class SttLlmPlugin extends Plugin {
 		// Toggle STT recording
 		this.addCommand({
 			id: "toggle-recording",
-			name: "Toggle STT recording",
+			name: "Toggle transcription",
 			callback: async () => {
 				await this.recordingManager.toggleRecording();
 			},
@@ -174,27 +174,27 @@ export default class SttLlmPlugin extends Plugin {
 
 				if (selection) {
 					menu.addItem((item) => {
-						item.setTitle("Summarize Selection")
+						item.setTitle("Summarize selection")
 							.setIcon("file-text")
-							.onClick(async () => {
-								await this.summarizeSelection(editor);
+							.onClick(() => {
+								void this.summarizeSelection(editor);
 							});
 					});
 
 					menu.addItem((item) => {
-						item.setTitle("Send with Custom Prompt")
+						item.setTitle("Send with custom prompt")
 							.setIcon("message-square")
-							.onClick(async () => {
-								await this.customPrompt(editor);
+							.onClick(() => {
+								void this.customPrompt(editor);
 							});
 					});
 				}
 
 				menu.addItem((item) => {
-					item.setTitle("Generate Tags for Note")
+					item.setTitle("Generate tags for note")
 						.setIcon("tags")
-						.onClick(async () => {
-							await this.autoTagCurrentNote();
+						.onClick(() => {
+							void this.autoTagCurrentNote();
 						});
 				});
 			})
@@ -236,23 +236,25 @@ export default class SttLlmPlugin extends Plugin {
 
 		// Create a simple prompt modal
 		const { CustomPromptModal } = await import("./ui/customPromptModal");
-		new CustomPromptModal(this.app, this.settings.customPrompt.defaultPrompt, async (userPrompt) => {
+		new CustomPromptModal(this.app, this.settings.customPrompt.defaultPrompt, (userPrompt) => {
 			if (!userPrompt) return;
 
 			new Notice("Processing...");
 
-			try {
-				const fullPrompt = `${userPrompt}\n\nText:\n${selection}`;
-				const result = await this.llmService.complete(fullPrompt);
+			void (async () => {
+				try {
+					const fullPrompt = `${userPrompt}\n\nText:\n${selection}`;
+					const result = await this.llmService.complete(fullPrompt);
 
-				// Insert result after selection
-				const cursor = editor.getCursor("to");
-				editor.replaceRange("\n\n" + result, cursor);
+					// Insert result after selection
+					const cursor = editor.getCursor("to");
+					editor.replaceRange("\n\n" + result, cursor);
 
-				new Notice("Response inserted");
-			} catch (error) {
-				new Notice(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
-			}
+					new Notice("Response inserted");
+				} catch (error) {
+					new Notice(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
+				}
+			})();
 		}).open();
 	}
 

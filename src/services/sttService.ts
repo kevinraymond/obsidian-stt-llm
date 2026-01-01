@@ -83,7 +83,7 @@ export class SttService {
 			this.ws.onopen = null;
 			try {
 				this.ws.close();
-			} catch (e) {
+			} catch {
 				// Ignore close errors
 			}
 			this.ws = null;
@@ -166,7 +166,7 @@ export class SttService {
 			} catch (error) {
 				cleanup();
 				this.setStatus("error", "Failed to create WebSocket");
-				reject(error);
+				reject(error instanceof Error ? error : new Error(String(error)));
 			}
 		});
 	}
@@ -180,7 +180,7 @@ export class SttService {
 			this.ws.onopen = null;
 			try {
 				this.ws.close(1000, "Client disconnect");
-			} catch (e) {
+			} catch {
 				// Ignore
 			}
 			this.ws = null;
@@ -252,7 +252,7 @@ export class SttService {
 				default:
 					// Ignore unknown message types
 			}
-		} catch (error) {
+		} catch {
 			// Silently ignore parse errors
 		}
 	}

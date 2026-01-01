@@ -23,8 +23,8 @@ export class SttLlmSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName("Speech-to-text").setHeading();
 
 		new Setting(containerEl)
-			.setName("STT Server URL")
-			.setDesc("WebSocket URL for the transcription server")
+			.setName("Server URL")
+			.setDesc("WebSocket address for the transcription server")
 			.addText((text) =>
 				text
 					.setPlaceholder("ws://localhost:8765")
@@ -35,7 +35,7 @@ export class SttLlmSettingTab extends PluginSettingTab {
 					})
 			)
 			.addButton((button) =>
-				button.setButtonText("Test Connection").onClick(async () => {
+				button.setButtonText("Test connection").onClick(async () => {
 					const url = this.plugin.settings.stt.serverUrl;
 					new Notice("Testing connection...");
 					try {
@@ -97,7 +97,7 @@ export class SttLlmSettingTab extends PluginSettingTab {
 			);
 
 		// ===== LLM SECTION =====
-		new Setting(containerEl).setName("LLM (optional)").setHeading();
+		new Setting(containerEl).setName("Language model (optional)").setHeading();
 
 		// Show LLM status
 		const llmConfigured = isLlmConfigured(this.plugin.settings);
@@ -106,19 +106,19 @@ export class SttLlmSettingTab extends PluginSettingTab {
 		});
 		if (llmConfigured) {
 			llmStatusEl.createEl("span", {
-				text: "LLM features are enabled",
+				text: "Language model features are enabled",
 				cls: "stt-llm-status-enabled",
 			});
 		} else {
 			llmStatusEl.createEl("span", {
-				text: "Configure LLM to enable summarization, tagging, and custom prompts",
+				text: "Configure language model to enable summarization, tagging, and custom prompts",
 				cls: "stt-llm-status-disabled",
 			});
 		}
 
 		new Setting(containerEl)
-			.setName("API Base URL")
-			.setDesc("OpenAI-compatible API endpoint (Ollama, LM Studio, etc.)")
+			.setName("Base URL")
+			.setDesc("OpenAI-compatible endpoint (Ollama, LM Studio, etc.)")
 			.addText((text) =>
 				text
 					.setPlaceholder("http://localhost:11434")
@@ -143,7 +143,7 @@ export class SttLlmSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("API Key")
+			.setName("API key")
 			.setDesc("Optional API key (leave empty for local servers)")
 			.addText((text) =>
 				text
@@ -244,12 +244,12 @@ export class SttLlmSettingTab extends PluginSettingTab {
 
 		// ===== ADVANCED SECTION =====
 		const advancedDetails = containerEl.createEl("details", { cls: "stt-llm-advanced-settings" });
-		advancedDetails.createEl("summary", { text: "Advanced Settings" });
+		advancedDetails.createEl("summary", { text: "Advanced settings" });
 
 		const advancedContainer = advancedDetails.createEl("div", { cls: "stt-llm-advanced-content" });
 
 		// LLM Advanced
-		new Setting(advancedContainer).setName("LLM parameters").setHeading();
+		new Setting(advancedContainer).setName("Model parameters").setHeading();
 
 		new Setting(advancedContainer)
 			.setName("Temperature")
@@ -302,8 +302,8 @@ export class SttLlmSettingTab extends PluginSettingTab {
 		new Setting(advancedContainer).setName("Prompt templates").setHeading();
 
 		new Setting(advancedContainer)
-			.setName("LLM correction")
-			.setDesc("Use LLM to fix transcription errors (shows both original and corrected)")
+			.setName("Automatic correction")
+			.setDesc("Use language model to fix transcription errors (shows both original and corrected)")
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.correction.enabled).onChange(async (value) => {
 					this.plugin.settings.correction.enabled = value;
