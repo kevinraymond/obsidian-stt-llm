@@ -320,8 +320,8 @@ var SttLlmSettingTab = class extends import_obsidian.PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
     new import_obsidian.Setting(containerEl).setName("Speech-to-text").setHeading();
-    new import_obsidian.Setting(containerEl).setName("Server URL").setDesc("WebSocket address for the transcription server").addText(
-      (text) => text.setPlaceholder("ws://localhost:8765").setValue(this.plugin.settings.stt.serverUrl).onChange(async (value) => {
+    new import_obsidian.Setting(containerEl).setName("Server URL").setDesc("Address for the transcription server").addText(
+      (text) => text.setPlaceholder("Example: ws://localhost:8765").setValue(this.plugin.settings.stt.serverUrl).onChange(async (value) => {
         this.plugin.settings.stt.serverUrl = value;
         await this.plugin.saveSettings();
       })
@@ -385,20 +385,20 @@ var SttLlmSettingTab = class extends import_obsidian.PluginSettingTab {
         cls: "stt-llm-status-disabled"
       });
     }
-    new import_obsidian.Setting(containerEl).setName("Base URL").setDesc("OpenAI-compatible endpoint (Ollama, LM Studio, etc.)").addText(
-      (text) => text.setPlaceholder("http://localhost:11434").setValue(this.plugin.settings.llm.baseUrl).onChange(async (value) => {
+    new import_obsidian.Setting(containerEl).setName("Base URL").setDesc("Compatible API endpoint").addText(
+      (text) => text.setPlaceholder("{url}").setValue(this.plugin.settings.llm.baseUrl).onChange(async (value) => {
         this.plugin.settings.llm.baseUrl = value;
         await this.plugin.saveSettings();
       })
     );
     new import_obsidian.Setting(containerEl).setName("Model").setDesc("Model name for completions").addText(
-      (text) => text.setPlaceholder("llama3.2").setValue(this.plugin.settings.llm.model).onChange(async (value) => {
+      (text) => text.setPlaceholder("Example: llama3.2").setValue(this.plugin.settings.llm.model).onChange(async (value) => {
         this.plugin.settings.llm.model = value;
         await this.plugin.saveSettings();
       })
     );
     new import_obsidian.Setting(containerEl).setName("API key").setDesc("Optional API key (leave empty for local servers)").addText(
-      (text) => text.setPlaceholder("sk-...").setValue(this.plugin.settings.llm.apiKey).onChange(async (value) => {
+      (text) => text.setPlaceholder("Optional").setValue(this.plugin.settings.llm.apiKey).onChange(async (value) => {
         this.plugin.settings.llm.apiKey = value;
         await this.plugin.saveSettings();
       })

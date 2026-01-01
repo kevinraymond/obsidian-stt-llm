@@ -24,10 +24,10 @@ export class SttLlmSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Server URL")
-			.setDesc("WebSocket address for the transcription server")
+			.setDesc("Address for the transcription server")
 			.addText((text) =>
 				text
-					.setPlaceholder("ws://localhost:8765")
+					.setPlaceholder("Example: ws://localhost:8765")
 					.setValue(this.plugin.settings.stt.serverUrl)
 					.onChange(async (value) => {
 						this.plugin.settings.stt.serverUrl = value;
@@ -118,10 +118,10 @@ export class SttLlmSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Base URL")
-			.setDesc("OpenAI-compatible endpoint (Ollama, LM Studio, etc.)")
+			.setDesc("Compatible API endpoint")
 			.addText((text) =>
 				text
-					.setPlaceholder("http://localhost:11434")
+					.setPlaceholder("HTTP://localhost:11434/v1")
 					.setValue(this.plugin.settings.llm.baseUrl)
 					.onChange(async (value) => {
 						this.plugin.settings.llm.baseUrl = value;
@@ -134,7 +134,7 @@ export class SttLlmSettingTab extends PluginSettingTab {
 			.setDesc("Model name for completions")
 			.addText((text) =>
 				text
-					.setPlaceholder("llama3.2")
+					.setPlaceholder("Example: llama3.2")
 					.setValue(this.plugin.settings.llm.model)
 					.onChange(async (value) => {
 						this.plugin.settings.llm.model = value;
@@ -147,7 +147,7 @@ export class SttLlmSettingTab extends PluginSettingTab {
 			.setDesc("Optional API key (leave empty for local servers)")
 			.addText((text) =>
 				text
-					.setPlaceholder("sk-...")
+					.setPlaceholder("Optional")
 					.setValue(this.plugin.settings.llm.apiKey)
 					.onChange(async (value) => {
 						this.plugin.settings.llm.apiKey = value;
